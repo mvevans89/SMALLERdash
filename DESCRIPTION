@@ -1,0 +1,13 @@
+Package: SMALLERdash
+Title: Ifanadiana Malaria Dashboard
+Version: 0.0.0.9000
+Authors@R: person('Michelle', 'Evans', email = 'mv.evans.phd@gmail.com', role = c('cre', 'aut'))
+Description: Package that contains code for the Malaria Dashbaord developed as part of the SMALLER project.
+License: What license is it under?
+Imports: 
+    config (>= 0.3.1),
+    golem (>= 0.3.4),
+    shiny (>= 1.7.1)
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.1.1
