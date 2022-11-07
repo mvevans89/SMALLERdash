@@ -1,13 +1,27 @@
 Package: SMALLERdash
-Title: Ifanadiana Malaria Dashboard
+Title: SMALLER Malaria Predictions
 Version: 0.0.0.9000
 Authors@R: person('Michelle', 'Evans', email = 'mv.evans.phd@gmail.com', role = c('cre', 'aut'))
-Description: Package that contains code for the Malaria Dashbaord developed as part of the SMALLER project.
-License: What license is it under?
+Description: An application to contain malaria tools developed as part of the ANR SMALLER Project.
+License: MIT + file LICENSE
 Imports: 
+    attempt,
     config (>= 0.3.1),
+    DT,
+    glue,
     golem (>= 0.3.4),
+    htmltools,
     shiny (>= 1.7.1)
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.1
+Suggests: 
+    knitr,
+    rmarkdown,
+    spelling,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Language: en-US
+VignetteBuilder: knitr
+URL: https://github.com/mvevans89/SMALLERdash
+BugReports: https://github.com/mvevans89/SMALLERdash/issues
