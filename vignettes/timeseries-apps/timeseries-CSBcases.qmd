@@ -1,0 +1,161 @@
+---
+title: "Time series of expected cases at CSB"
+format: html
+editor: source
+---
+
+
+```{r}
+#| include: false
+
+library(ggplot2); theme_set(theme_bw())
+library(tidyr)
+library(lubridate)
+
+#should set wd to project directory
+library(here)
+
+library(dplyr)
+```
+
+The data aggregated at a CSB level is calculated in the `backcalculate-incidence-cases.qmd` file. It transforms incidence to cases and corrects using the HCUI and paired CSB-fokontany consultation rates to estimate how many malaria cases will be at each CSB.
+
+# Load and Format Data
+
+First we load the data and format it a bit so we have the historical and predictions in one dataset so it matches the incidence time series.
+
+```{r}
+csb.preds <- readRDS(here("data/csb-cases/preds-backcalculate.Rds"))
+csb.true <- readRDS(here("data/csb-cases/true-backcalculate.Rds"))
+```
+
+Set date for predictions to go from:
+
+```{r}
+current.month <- as.Date("2020-12-01")
+#need to automate (I think I need to use %%)
+# month.label.order <- month.abb[c(4:12, 1:3)]
+month.label.order <- month.abb[((month(current.month)-9):(month(current.month)+2)) %% 12 +1]
+```
+
+Combine into one data frame
+
+```{r}
+plot.data.csb <- csb.true %>%
+  #first get historical in proper form
+  filter(date<= current.month) %>%
+  #create new columns to line up
+  mutate(lowCI = mal_case_csb,
+         uppCI = mal_case_csb,
+         median = mal_case_csb) %>%
+  bind_rows(filter(csb.preds, date>current.month)) %>%
+  #categorize into season and labels
+    mutate(season = case_when(
+    date > current.month %m-% months(9)  ~ "Present",
+    date > current.month %m-% months(9+ 12) ~ " 2019/2020",
+    date > current.month %m-% months(9+ (12*2)) ~ " 2018/2019",
+       date > current.month %m-% months(9+ (12*3)) ~ " 2017/2018",
+    TRUE ~ "drop")
+  ) %>%
+  filter(season != "drop") %>%
+  mutate(month_lab = month.abb[month(date)]) %>%
+  #change to ordered factor
+  mutate(month_lab = factor(month_lab, levels = month.label.order)) %>%
+  select(-mal_case_csb, -raw_case_csb)
+```
+
+Create district-level data by summing (this could be useful for district level orders?)
+
+```{r}
+plot.data.district <- plot.data.csb %>%
+  select(-CSB) %>%
+  group_by(season, date, month_lab) %>%
+  summarise_all(sum)
+```
+
+# Plot District-Level
+
+Potential interactive bit
+
+```{r}
+historical <- TRUE
+
+if(historical){
+  plot.data2 <- plot.data.district
+  color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+  p.size <- c(1,1,1,2)
+} else {
+  #only current unless checked
+  plot.data2 <- filter(plot.data.district, season == "Present")
+  color.scale <- c("black")
+  p.size <- c(2)
+}
+
+#identify label for prediction label
+label.y <- max(plot.data2$uppCI)*1.1
+```
+
+```{r}
+ggplot(data = plot.data2, aes(x = month_lab)) +
+  geom_ribbon(aes(ymin = lowCI, ymax = uppCI, group = season), 
+              alpha = 0.3, fill = "black") +
+  # geom_point(aes(y = inc_true, color = season)) +
+  geom_line(aes(y = median, color = season, group = season, size = season)) +
+  geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
+  geom_label(data = data.frame(), aes(x = 10.5, y = label.y, label = "Prediction"), hjust = 0.5) +
+  xlab("Month") +
+  ylab("Total Malaria Cases at CSBs") +
+  scale_color_manual(values = color.scale, name = "Season") +
+  scale_size_manual(values = p.size, name = "Season") +
+  coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
+  theme(legend.position = "bottom") +
+  labs(title = "Expected Malaria Cases at all CSBs in the District",
+       subtitle = "Predicted Jan - Mar 2021") 
+
+```
+
+# Plot CSB Level
+
+Probably this can be like one module that I just feed different data to, right?
+
+```{r}
+#which CSB
+# csbSelect <- "MAROMANANA"
+csbSelect <- "RANOMAFANA"
+historical <- TRUE
+
+if(historical){
+  plot.data2 <- filter(plot.data.csb, CSB %in% csbSelect)
+  color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+  p.size <- c(1,1,1,2)
+} else {
+  #only current unless checked
+  plot.data2 <- filter(plot.data.csb, season == "Present",  CSB %in% csbSelect)
+  color.scale <- c("black")
+  p.size <- c(2)
+}
+
+#identify label for prediction label
+label.y <- max(plot.data2$uppCI)*1.1
+```
+
+
+```{r}
+ggplot(data = plot.data2, aes(x = month_lab)) +
+  geom_ribbon(aes(ymin = lowCI, ymax = uppCI, group = season), 
+              alpha = 0.3, fill = "black") +
+  # geom_point(aes(y = inc_true, color = season)) +
+  geom_line(aes(y = median, color = season, group = season, size = season)) +
+  geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
+  geom_label(data = data.frame(), aes(x = 10.5, y = label.y, label = "Prediction"), hjust = 0.5) +
+  xlab("Month") +
+  ylab("Total Malaria Cases at CSB") +
+  scale_color_manual(values = color.scale, name = "Season") +
+  scale_size_manual(values = p.size, name = "Season") +
+  coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
+  theme(legend.position = "bottom") +
+  labs(title = paste("Expected Malaria Cases at", 
+  stringr::str_to_title(csbSelect), "CSB"),
+       subtitle = "Predicted Jan - Mar 2021") 
+
+```

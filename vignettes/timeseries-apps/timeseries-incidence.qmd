@@ -1,0 +1,308 @@
+---
+title: "timeseries-incidence"
+format: html
+editor: source
+---
+
+
+```{r}
+#| include: false
+
+library(ggplot2); theme_set(theme_bw())
+library(tidyr)
+library(lubridate)
+
+#should set wd to project directory
+library(here)
+
+library(dplyr)
+```
+
+This document explores everything we will need to make the timeseries-incidence module. It shows a timeseris of incidence (historical and predicted) across different spatial resolutions.
+
+It needs the following data:
+
+- adjusted incidence (true)
+- modeled incidence (median + CIs)
+
+The following bits will be interactive:
+- whether to show the historical trends or not
+- the geographic resolution (district, commune, fokontany)
+- the age classes (one at a time)
+
+# Load and Format Data
+
+This is the data we'll need. It also may do some cleaning, which eventually we will want to move elsewhere to speed up the application.
+
+```{r}
+#adjusted incidence (also contains true)
+mal.data <- readRDS(here("data/raw/malaria-data.rds"))
+
+#population, needed to get incidence at higher spatial aggregations that is population-weighed
+pop <- readRDS(here("data/pop_fkt.rds")) %>%
+  rename(pop = pop_month)
+```
+
+It would probably be good to have the predictions already grouped by the groups that the interactive bit will call on. Probably fastest is to load data at beginnig and then just call on different data types.
+
+```{r}
+#calculated distance weighted of each
+#cases per fokontany
+fkt.cases <- mal.data %>%
+  left_join(filter(pop, age_class == "adult"), by = c("comm_fkt", "date")) %>%
+  #calculate true number of cases
+  mutate(case_lowCI = lowCI * pop / 1000,
+         case_med = median * pop / 1000,
+         case_uppCI = uppCI * pop /1000,
+         case_true = true_y * pop / 1000)
+
+district.mal <- fkt.cases %>%
+  group_by(date) %>%
+  summarise_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI", "pop"), sum, na.rm = T) %>%
+  #change back to incidence
+  ungroup() %>%
+  mutate_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI"), 
+            ~(.x / pop * 1000)) %>%
+  rename(inc_true = case_true, inc_lowCI = case_lowCI, 
+         inc_med = case_med, inc_uppCI = case_uppCI)
+
+commune.mal <- fkt.cases %>%
+  separate(comm_fkt, into = c("commune", "fokontany"), sep = "_") %>%
+  group_by(date, commune) %>%
+  summarise_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI", "pop"), sum, na.rm = T) %>%
+  #change back to incidence
+  ungroup() %>%
+  mutate_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI"), 
+            ~(.x / pop * 1000)) %>%
+  rename(inc_true = case_true, inc_lowCI = case_lowCI, inc_med = case_med, inc_uppCI = case_uppCI)
+```
+
+Currently we only have one age class, but eventually will model all three + the all. 
+
+## Set Date for predictions to go from
+
+```{r}
+current.month <- as.Date("2020-12-01")
+#need to automate this but it is breaking my head
+month.label.order <- month.abb[c(4:12, 1:3)]
+```
+
+
+# Base Plot
+
+The basic plot is just a timer series of the past 12 months + future 3 months. This is set as though right now is december 2020.
+
+## District Level
+
+Most of this could be done in a github action that runs monthly:
+
+```{r}
+district.data <- district.mal %>%
+  #create seasonal vs. historical bits
+  filter(date<= current.month %m+% months(3)) %>%
+  mutate(season = case_when(
+    date > current.month %m-% months(9)  ~ "Present",
+    date > current.month %m-% months(9+ 12) ~ " 2019/2020",
+    date > current.month %m-% months(9+ (12*2)) ~ " 2018/2019",
+       date > current.month %m-% months(9+ (12*3)) ~ " 2017/2018",
+    TRUE ~ "drop")
+  ) %>%
+  filter(season != "drop") %>%
+  mutate(month_lab = month.abb[month(date)]) %>%
+  #change to ordered factor
+  mutate(month_lab = factor(month_lab, levels = month.label.order)) %>%
+  #historical data is just the real thing, not predictions
+  mutate(inc_lowCI =ifelse(date<= current.month, inc_true, inc_lowCI)) %>%
+  mutate(inc_uppCI =ifelse(date<= current.month,inc_true,  inc_uppCI)) %>%
+  mutate(inc_med = ifelse(date<= current.month, inc_true,  inc_med))
+```
+
+Potential Interactive Bits
+
+```{r}
+historical <- TRUE
+
+if(historical){
+  plot.data2 <- plot.data
+  p1.color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+  p1.size <- c(1,1,1,2)
+} else {
+  #only current unless checked
+  plot.data2 <- filter(plot.data, season == "Present")
+  p1.color.scale <- c("black")
+  p1.size <- c(2)
+}
+```
+
+Plot
+
+ 
+```{r}
+ggplot(data = plot.data2, aes(x = month_lab)) +
+  geom_ribbon(aes(ymin = inc_lowCI, ymax = inc_uppCI, group = season), 
+              alpha = 0.3, fill = "black") +
+  # geom_point(aes(y = inc_true, color = season)) +
+  geom_line(aes(y = inc_med, color = season, group = season, size = season)) +
+  geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
+  geom_label(data = data.frame(), aes(x = 10.5, y = 250, label = "Prediction"), hjust = 0.5) +
+  xlab("Month") +
+  ylab("Incidence (per 1000)") +
+  scale_color_manual(values = p1.color.scale, name = "Season") +
+  scale_size_manual(values = p1.size, name = "Season") +
+  coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
+  theme(legend.position = "bottom") +
+  labs(title = "Ifanadiana Incidence",
+       subtitle = "Predicted Jan - Mar 2021") 
+```
+
+## Commune Level
+
+The data cleaning bit could probably be a function that is the same for all aggregations of district, commune, or fokontany.
+
+Clean data for each commune
+
+```{r}
+plot.data.commune <- commune.mal %>%
+  #create seasonal vs. historical bits
+  filter(date<= current.month %m+% months(3)) %>%
+  mutate(season = case_when(
+    date > current.month %m-% months(9)  ~ "Present",
+    date > current.month %m-% months(9+ 12) ~ " 2019/2020",
+    date > current.month %m-% months(9+ (12*2)) ~ " 2018/2019",
+       date > current.month %m-% months(9+ (12*3)) ~ " 2017/2018",
+    TRUE ~ "drop")
+  ) %>%
+  filter(season != "drop") %>%
+  mutate(month_lab = month.abb[month(date)]) %>%
+  #change to ordered factor
+  mutate(month_lab = factor(month_lab, levels = month.label.order)) %>%
+  #historical data is just the real thing, not predictions
+  mutate(inc_lowCI =ifelse(date<= current.month, inc_true, inc_lowCI)) %>%
+  mutate(inc_uppCI =ifelse(date<= current.month,inc_true,  inc_uppCI)) %>%
+  mutate(inc_med = ifelse(date<= current.month, inc_true,  inc_med))
+```
+
+Interactive bit
+
+```{r}
+#which commune?
+communeSelect <- "AMPASINAMBO"
+#are we plotting historical?
+historical <- TRUE
+
+if(historical){
+  plot.data.commune2 <- filter(plot.data.commune, commune %in% communeSelect)
+  p2.color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+  p2.size <- c(1,1,1,2)
+} else {
+  #only current unless checked
+  plot.data.commune2 <- filter(plot.data.commune, season == "Present", commune %in% communeSelect)
+  p2.color.scale <- c("black")
+  p2.size <- c(2)
+}
+
+```
+
+Plot
+
+```{r}
+pred.label.y <- max(plot.data.commune2$inc_uppCI) *1.1
+
+ggplot(data = plot.data.commune2, aes(x = month_lab)) +
+  geom_ribbon(aes(ymin = inc_lowCI, ymax = inc_uppCI, group = season), 
+              alpha = 0.3, fill = "black") +
+  # geom_point(aes(y = inc_true, color = season)) +
+  geom_line(aes(y = inc_med, color = season, group = season, size = season)) +
+  geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
+  geom_label(data = data.frame(), aes(x = 10.5, y = pred.label.y, label = "Prediction"), hjust = 0.5) +
+  xlab("Month") +
+  ylab("Incidence (per 1000)") +
+  scale_color_manual(values = p1.color.scale, name = "Season") +
+  scale_size_manual(values = p1.size, name = "Season") +
+  coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
+  theme(legend.position = "bottom") +
+  labs(title = paste(stringr::str_to_title(communeSelect),"Incidence"),
+       subtitle = "Predicted Jan - Mar 2021") 
+```
+
+## Fokontany Level
+
+Clean data for fokontany
+
+```{r}
+plot.data.fkt <- mal.data %>%
+  #create seasonal vs. historical bits
+  filter(date<= current.month %m+% months(3)) %>%
+  mutate(season = case_when(
+    date > current.month %m-% months(9)  ~ "Present",
+    date > current.month %m-% months(9+ 12) ~ " 2019/2020",
+    date > current.month %m-% months(9+ (12*2)) ~ " 2018/2019",
+       date > current.month %m-% months(9+ (12*3)) ~ " 2017/2018",
+    TRUE ~ "drop")
+  ) %>%
+  filter(season != "drop") %>%
+  mutate(month_lab = month.abb[month(date)]) %>%
+  #change to ordered factor
+  mutate(month_lab = factor(month_lab, levels = month.label.order)) %>%
+  #historical data is just the real thing, not predictions
+  rename(inc_true = true_y, inc_lowCI = lowCI, inc_uppCI = uppCI, inc_med = median) %>%
+  mutate(inc_lowCI =ifelse(date<= current.month, inc_true, inc_lowCI)) %>%
+  mutate(inc_uppCI =ifelse(date<= current.month,inc_true,  inc_uppCI)) %>%
+  mutate(inc_med = ifelse(date<= current.month, inc_true,  inc_med))
+```
+
+Interactive bit
+
+```{r}
+#which commune?
+communeSelect <- "AMPASINAMBO"
+fktSelect <- "AMPASIMBOLA I"
+fullSelect <- paste(communeSelect, fktSelect, sep = "_")
+#are we plotting historical?
+historical <- TRUE
+
+if(historical){
+  plot.data.fkt2 <- filter(plot.data.fkt, comm_fkt %in% fullSelect)
+  p3.color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+  p3.size <- c(1,1,1,2)
+} else {
+  #only current unless checked
+  plot.data.fkt2 <- filter(plot.data.fkt, season == "Present", 
+                               comm_fkt %in% fullSelect)
+  p3.color.scale <- c("black")
+  p3.size <- c(2)
+}
+
+```
+
+Plot
+
+```{r}
+pred.label.y <- max(plot.data.fkt2$inc_uppCI) *1.1
+
+ggplot(data = plot.data.fkt2, aes(x = month_lab)) +
+  geom_ribbon(aes(ymin = inc_lowCI, ymax = inc_uppCI, group = season), 
+              alpha = 0.3, fill = "black") +
+  # geom_point(aes(y = inc_true, color = season)) +
+  geom_line(aes(y = inc_med, color = season, group = season, size = season)) +
+  geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
+  geom_label(data = data.frame(), aes(x = 10.5, y = pred.label.y, label = "Prediction"), hjust = 0.5) +
+  xlab("Month") +
+  ylab("Incidence (per 1000)") +
+  scale_color_manual(values = p3.color.scale, name = "Season") +
+  scale_size_manual(values = p3.size, name = "Season") +
+  coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
+  theme(legend.position = "bottom") +
+  labs(title = paste0(stringr::str_to_title(communeSelect), ": ",
+                      stringr::str_to_title(fktSelect)," Incidence"),
+       subtitle = "Predicted Jan - Mar 2021") 
+```
+
+# Save data for actual Shiny app
+
+```{r}
+saveRDS(district.data, "data/for-app/inc-district.rds")
+saveRDS(plot.data.commune, "data/for-app/inc-commune.rds")
+saveRDS(plot.data.fkt, "data/for-app/inc-fokontany.rds")
+```
+

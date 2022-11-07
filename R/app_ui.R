@@ -2,7 +2,7 @@
 #'
 #' @param request Internal parameter for `{shiny}`.
 #'     DO NOT REMOVE.
-#' @import shiny
+#' @import shiny shinydashboard
 #' @noRd
 app_ui <- function(request) {
   tagList(
@@ -10,9 +10,33 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Your application UI logic
     fluidPage(
-      h1("SMALLERdash")
-    )
-  )
+      dashboardPage(
+
+        skin = "green",
+
+        dashboardHeader(title = "Paludisme Prédictions"),
+
+        dashboardSidebar(width = 300,
+            sidebarMenu(
+              menuItem("Home", tabName = "Home", icon = icon("home")),
+              menuItem("Incidence", tabName = "incidence")
+            ) # end sidebarMenu
+                         ), #end dashboardSidebar
+        dashboardBody(
+
+          tabItems(
+            tabItem(tabName = 'home',
+                    "Landing Page for the App"),
+            tabItem(tabName = 'incidence',
+              #contains the plot of incidence time series
+              mod_incidence_time_ui("inc1"))
+
+          )
+        ) #end dashboardBody
+
+    ) #end  dashboardPage
+  ) #end fluidPage
+  ) #end tagList
 }
 
 #' Add external Resources to the Application

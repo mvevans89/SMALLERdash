@@ -1,0 +1,156 @@
+---
+title: "Planning ACT Stockout"
+format: html
+---
+
+This document creates the figure that shows the expected number of cases compared to treated cases in prior years.
+
+```{r}
+#| include: false
+
+library(ggplot2); theme_set(theme_bw())
+library(tidyr)
+library(lubridate)
+
+#should set wd to project directory
+library(here)
+
+library(dplyr)
+```
+
+# Load and Format Data
+
+We need the stockout data for the historical case numbers and ACT's available. We also need the predicted numbers of cases.
+
+```{r}
+stock <- readRDS(here("data/raw/stockout.rds"))
+
+csb.preds <- readRDS(here("data/csb-cases/preds-backcalculate.Rds"))
+```
+
+I think it makes more sense to predict over three months for now (but we could make this something that people choose too).
+
+Set current month to choose months to loop over
+
+```{r}
+current.month <- as.Date("2020-12-01")
+month.label.order <- month.abb[((month(current.month)-9):(month(current.month)+2)) %% 12 +1]
+
+#month period is next three months
+month.period <- (month(current.month)+1):(month(current.month)+3) %% 12
+#date period
+date.period <- current.month %m+% months(1:3)
+```
+
+Historical data (from stockout)
+
+```{r}
+stock.historical <- stock %>%
+  filter(date < current.month) %>%
+  filter(month %in% month.period) %>%
+  group_by(csb, year) %>%
+  summarise(sum_fever = sum(num_case_fever),
+            sum_rdt_pos = sum(rdt_tests_pos),
+            sum_act = sum(pos_treat_act)) %>%
+  mutate(CSB = toupper(gsub("CSB2 ", "", csb))) %>%
+  mutate(CSB = ifelse(CSB == "ATSINDRA", "ANTSINDRA", CSB)) %>%
+  ungroup()
+```
+
+Expected cases
+
+```{r}
+pred.cases <- csb.preds %>%
+  filter(date %in% date.period) %>% 
+  mutate(year = year(date)) %>%
+  select(-date) %>%
+  #calcualte sum of cases for the period
+  group_by(CSB, year) %>%
+  summarise_all(sum) %>%
+  #only keep CSBs in stockout data
+  filter(CSB %in% stock.historical$CSB) %>%
+  mutate(metric = "predicted") %>%
+  rename(med = median)
+```
+
+Combine in a way that we can plot it all together and still plot error bars
+
+```{r}
+plot.data <- stock.historical %>%
+  #also maybe drop 2017?
+  filter(year > 2017) %>%
+  mutate(rdt_non = sum_rdt_pos - sum_act) %>%
+  select(-csb, -sum_fever, -sum_rdt_pos) %>%
+  pivot_longer(cols = c("rdt_non", "sum_act"), names_to = "metric", values_to = "med") %>%
+  mutate(lowCI = 1,
+         uppCI = NA) %>%
+  bind_rows(pred.cases) %>%
+  mutate(fill_label = case_when(
+    metric == "rdt_non" ~ "Cas Total",
+    metric == "sum_act" ~ "Traité avec ACT",
+    metric == "predicted" ~ "Cas Prédit"
+  )) %>%
+  #arrange this way so the treated column goes on the bottom
+  arrange(desc(fill_label))
+  # mutate(fill_label = factor(fill_label, levels = c("Traité avec ACT", "Cas Total")))
+```
+
+# Initial Plot
+
+```{r}
+ggplot(plot.data, aes(x = year, group = as.factor(year))) +
+  geom_col(aes(y = med, fill = fill_label), position = position_stack()) +
+  geom_errorbar(aes(ymin = lowCI, ymax = uppCI), width = 0) +
+  facet_wrap(~CSB, scales = "free") +
+  scale_fill_manual(values = c("darkred", "gray50", "black"), name = "") +
+  theme(legend.position = "bottom") +
+  xlab("") +
+  ylab("Nombre de Cas") +
+  ggtitle("Cas Reçu et Traité aux CSB2 (Jan - March)")
+```
+
+The number of cases in 2021 was super high and makes it seem like we are doing a really poor job of predicting. So it may be worth plotting the true data as well to see how off we are.
+
+## Plot true stockout
+
+The only problem with this is we don't actually have the number of positive RDT's, only RDT's done and the number treated with ACT. But it shows qualitatively that there was a huge incrase in cases in 2021. So this only shows those treated in 2021.
+
+```{r}
+stock.true <- stock %>%
+  filter(month %in% month.period) %>%
+  group_by(csb, year) %>%
+  summarise(sum_fever = sum(num_case_fever),
+            sum_rdt_pos = sum(rdt_tests_pos),
+            sum_act = sum(pos_treat_act)) %>%
+  mutate(CSB = toupper(gsub("CSB2 ", "", csb))) %>%
+  mutate(CSB = ifelse(CSB == "ATSINDRA", "ANTSINDRA", CSB)) %>%
+  ungroup() %>%
+   #also maybe drop 2017?
+  filter(year > 2017) %>%
+  mutate(rdt_non = sum_rdt_pos - sum_act) %>%
+  select(-csb, -sum_fever, -sum_rdt_pos) %>%
+  pivot_longer(cols = c("rdt_non", "sum_act"), names_to = "metric", values_to = "med") %>%
+  mutate(lowCI = 1,
+         uppCI = as.numeric(NA)) %>%
+  mutate(fill_label = case_when(
+    metric == "rdt_non" ~ "Cas Total",
+    metric == "sum_act" ~ "Traité avec ACT",
+    metric == "predicted" ~ "Cas Prédit"
+  )) %>%
+  #arrange this way so the treated column goes on the bottom
+  arrange(desc(fill_label))
+```
+
+```{r}
+ggplot(stock.true, aes(x = year, group = as.factor(year))) +
+  geom_col(aes(y = med, fill = fill_label), position = position_stack()) +
+  geom_errorbar(aes(ymin = lowCI, ymax = uppCI), width = 0) +
+  facet_wrap(~CSB, scales = "free") +
+  scale_fill_manual(values = c("gray50", "black"), name = "") +
+  theme(legend.position = "bottom") +
+  xlab("") +
+  ylab("Nombre de Cas") +
+  ggtitle("Cas Reçu et Traité aux CSB2 (Jan - March)")
+```
+
+Next to these charts, I think it would be helpful to have something to select CSBS. Like it originally shows all and then you can drop some. Could also be nice to have a table that shows the DHIS stockout data and is then downloadable. [this is definitely a next step]

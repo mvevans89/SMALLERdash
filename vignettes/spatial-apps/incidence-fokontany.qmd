@@ -1,0 +1,158 @@
+---
+title: "Map Incidence by Fokontany"
+author: "Michelle Evans"
+date: "2022-11-03"
+format: html
+editor: source
+---
+
+
+```{r}
+#| include: false
+
+options(stringsAsFactors = F, scipen = 999)
+
+library(ggplot2); theme_set(theme_bw())
+library(lubridate)
+library(sf)
+library(leaflet)
+
+#should set wd to project directory
+library(here)
+
+library(tidylog)
+library(dplyr)
+
+source(here("R/leaflet-legend-decreasing.R")) #leaflet legend that makes more sense
+```
+
+This data should already be made for the time series, so it will just be re-formatting and mapping for this. Selecting a fokontany will change the zoom and maybe show the data in a table? Or we can just use the leaflet clicking power for that.
+
+# Load and Format Data 
+
+```{r}
+#this will be automatically determined
+current.month <- as.Date("2020-12-01")
+```
+
+
+Map data
+
+```{r}
+fkt.poly <- readRDS(here("data/ifd_fokontany_poly.rds")) %>%
+  #reproject to WGS84
+  st_transform(4326) %>%
+  select(comm_fkt)
+```
+
+Malaria data
+
+```{r}
+mal.data <- readRDS(here("data/malaria-data.rds"))
+  #filter based on current.month (also done via a github action)
+  # filter(date>=as.Date(current.month) - months(6), date<= current.month + months(3))
+```
+
+# Basic Map
+
+May be worth thinking about how we can show uncertainty in the data
+
+```{r}
+#by default show current month, but they can choose from anywhere from 6 months prior to 3 months after via a slider?
+this.data <- filter(mal.data, date == current.month) %>%
+    tidyr::separate(comm_fkt, into = c("commune", "fokontany"), remove = F, sep = "_") %>%
+  #create pop-up (should also be done before the fact)
+  mutate(popup = paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                       "<b>Taux Prédit (per 1000):</b> ", round(median), "<br>",
+                       "<b>Éventail:</b> ", round(lowCI), " - ", round(uppCI))) %>%
+    #fix NA popups
+    mutate(popup = ifelse(is.na(popup), 
+                          paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                                "<b>Taux Prédit (per 1000):</b> Inconnu <br>",
+                                "<b>Éventail:</b> Inconnu"), popup)) %>%
+  right_join(fkt.poly) %>% st_as_sf()
+
+```
+
+```{r}
+colorpal <- colorNumeric(
+  palette = "YlOrRd",
+  domain = this.data$median,
+  na.color = NA
+)
+colorpalLegend <- colorNumeric(
+  palette = "YlOrRd",
+  domain = this.data$median,
+  na.color = NA,
+  reverse = TRUE
+)
+
+leaflet(this.data) %>%
+  addTiles() %>%
+  setView(lat = -21.30, lng = 47.638, zoom = 10) %>%
+  addPolygons(data = this.data, color = "#4d4d4d", weight = 1.5, 
+              fillColor = ~colorpal(median),
+              opacity = 1,
+              fillOpacity = 0.8, 
+              highlightOptions = highlightOptions(color = "black", bringToFront = TRUE,
+                                                  weight = 3),
+              popup = ~popup) %>%
+  addLegend_decreasing("bottomright", pal = colorpal, values = ~median,
+            title = "Taux Paludisme<br>Prédit<br>(per 1000)", na.label = "", decreasing = TRUE)
+```
+
+# Incidence Relative to Last Year
+
+First create this data. This should probably technically be from the full posterior distribution from the model which gives us the probability that it will be higher than year before. For now, rather than risk, we can just the the actual difference (more cases predicted than last year)
+
+```{r}
+this.year <- year(current.month)
+last.year <- this.year - 1
+
+compare.data <- mal.data %>%
+  filter(date %in% c(current.month, current.month - years(1))) %>%
+  #create variable of difference
+  select(median, date, comm_fkt) %>%
+  mutate(year = ifelse(year(date) == this.year, "current", "last")) %>%
+  select(-date) %>%
+  pivot_wider(names_from = year, values_from = median) %>%
+  mutate(inc_diff = current-last) %>%
+  mutate(inc_rel = current/last *100) %>%
+  tidyr::separate(comm_fkt, into = c("commune", "fokontany"), remove = F, sep = "_") %>%
+  #create pop-up (should also be done before the fact)
+  mutate(popup = paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                       "<b>Taux (", last.year, "):</b> ", round(last), "<br>",
+                       "<b>Taux (", this.year, "):</b> ", round(current), "<br>",
+                       "<b>Taux Relatif:</b> ", round(inc_rel,2), "%")) %>%
+    #fix NA popups
+    mutate(popup = ifelse(is.na(popup), 
+                          paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                       "<b>Taux (",last.year,"):</b> Inconnu <br>",
+                       "<b>Taux (",this.year,":</b> Inconnu <br>",
+                       "<b>Taux Relatif:</b> Inconnu"), popup)) %>%
+  right_join(fkt.poly) %>% st_as_sf()
+```
+
+```{r}
+colorpal2 <- colorNumeric(
+  palette = "YlOrRd",
+  domain = compare.data$inc_rel,
+  na.color = NA
+)
+
+leaflet(compare.data) %>%
+  addTiles() %>%
+  setView(lat = -21.30, lng = 47.638, zoom = 10) %>%
+  addPolygons(data = compare.data, color = "#4d4d4d", weight = 1.5, 
+              fillColor = ~colorpal2(inc_rel),
+              opacity = 1,
+              fillOpacity = 0.8, 
+              highlightOptions = highlightOptions(color = "black", bringToFront = TRUE,
+                                                  weight = 3),
+              popup = ~popup) %>%
+  addLegend_decreasing("bottomright", pal = colorpal2, values = ~inc_rel,
+            title = "Taux Paludisme Relatif à<br>l'Année Passée<br>(per 1000)",
+            labFormat = labelFormat(suffix = "%"),
+            decreasing = TRUE)
+```
+

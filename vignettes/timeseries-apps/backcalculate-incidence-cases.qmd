@@ -1,0 +1,309 @@
+---
+title: "How to calculate cases from incidence"
+format: html
+editor: source
+---
+
+
+```{r}
+#| include: false
+
+options(stringsAsFactors = F, scipen = 999)
+
+library(ggplot2); theme_set(theme_bw())
+library(tidyr)
+library(lubridate)
+
+#should set wd to project directory
+library(here)
+
+library(dplyr)
+```
+
+This document explores how best to back-calculate the number of cases at each CSB from the data of cases by fokontany. We do this with "true" (not predicted data) first to see how well it works.
+
+# Load Data 
+
+```{r}
+#proportion consults at each CSB from all consultations
+consult.catchment <- read.csv(here("data/consults_by_csb_2018-2019.csv"))
+#true malaria 
+true.mal <- readRDS(here("data/malaria-data.rds")) %>%
+  select(comm_fkt, date, true_y)
+#population values
+pop <- readRDS(here("data/pop_fkt.rds"))
+#hcui, also info on imputation and stockout correction
+hcui <- readRDS(here("data/raw/hcui-full.rds"))
+#stockout data includes data on how many cases were at the CSB
+stock <- readRDS(here("data/raw/stockout.rds"))
+```
+
+
+# Back-calculate historical data
+
+## Incidence to cases per fokontany
+
+Incidence is cases per 1000, change to get cases per fokontany
+
+```{r}
+mal.case <- true.mal %>%
+  left_join(filter(pop, age_class == "all")) %>%
+  mutate(mal_case = true_y /1000 * pop_month)
+```
+
+## Rescale with HCUI to estimate cases seeking care at CSB
+
+We also make a note of the raw number of cases from each fokontany. One problem is currently we are predicting all ages of malaria cases and hcui is calculated for each age group. Like really what we need is to predict each age group and combine it all together. For now, we'll just use the mean HCUI across the age groups
+
+```{r}
+hcui.mean <- select(hcui, comm_fkt, date, age_class, scale_hcui, palu_rate_raw) %>%
+  left_join(pop) %>%
+  #calculate population weighted hcui and total cases
+  mutate(mal_case = palu_rate_raw / 1000 * pop_month) %>%
+  group_by(comm_fkt, date) %>%
+  summarise(mal_case_raw = sum(mal_case, na.rm = T),
+            hcui = weighted.mean(scale_hcui, w = pop_month)) %>%
+  ungroup()
+
+case.seek <- select(mal.case, comm_fkt, date, mal_case, pop = pop_month) %>%
+  left_join(hcui.mean) %>%
+  mutate(mal_case_seek = mal_case*hcui)
+```
+
+
+### Compare raw cases to health seeking cases by fokontany
+
+Compare the raw malaria cases with the malaria accounting for care seekign at the fokontany (these should be relatively close). This doesn't account for the fact that we haven't yet adjusted for stockouts though. It also still has those that are imputed
+
+We can estimate overall correlation
+
+```{r}
+cor(case.seek$mal_case_raw, case.seek$mal_case_seek, use = "pairwise.complete.obs")
+
+plot(case.seek$mal_case_raw, case.seek$mal_case_seek)
+```
+
+There are some that really fall off the 1-1 line. Can we estimate this better  by looking within fokontany? We can plot the ten worst fokontany
+
+```{r}
+poor_p <- case.seek %>%
+  group_by(comm_fkt) %>%
+  summarise(cor_p = cor(mal_case_raw, mal_case_seek, use = "pairwise.complete.obs")) %>%
+  ungroup() %>%
+  arrange(cor_p) %>%
+  slice(1:20)
+
+knitr::kable(poor_p)
+```
+
+
+```{r}
+case.seek %>%
+  filter(comm_fkt %in% poor_p$comm_fkt) %>%
+  ggplot(aes(x = mal_case_raw, y = mal_case_seek)) +
+  geom_point() +
+  geom_abline(intercept = 0, slope = 1, color = "red") +
+  facet_wrap(~comm_fkt, scales = "free")
+
+case.seek %>%
+  filter(comm_fkt %in% poor_p$comm_fkt) %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = mal_case_seek), color = "red") +
+  geom_line(aes(y = mal_case_raw), linetype = "dashed") +
+  facet_wrap(~comm_fkt, scales = "free")
+```
+
+Some are due to imputation (basically all of those that have 0 for mal_case_raw). Others are likely due to things like stockout or a weird month where actually a lot of people went to the CSB and our hcui correction was too much. We can investigate some specifically.
+
+**AMBOHIMIERA**
+
+There shouldn't be a big different for this one because the hcui is 1, so that means anything that is off is due to either 1)  how we are back scaling from the incidence by age to full malaria cases or 2) stockouts. Yeah so the big differences are stockouts (like 2018-03-01 and 2020-02-01). The small differences are how I'm currently scaling from incidence to cases. Eventually this shouldn't really be an issue though because I will just do it for each age group and sum them all to get the all ages.
+
+```{r}
+#| eval:false
+
+filter(case.seek, comm_fkt == "AMBOHIMIERA_AMBOHIMIERA")
+```
+
+**ANDRORANGAVOLA_MANDRIAPOTSY**
+
+This fokontany only ever had one or two cases per month so a small change seems like a big increase in incidence. The big difference here is the difference due to zero-imputation. There are some instances where there were zero cases where some got imputed and that is leading to a higher than normal value.
+
+```{r}
+#| eval:false
+
+filter(case.seek, comm_fkt == "ANDRORANGAVOLA_MANDRIAPOTSY")
+```
+
+## Aggregate to CSB Level
+
+We then want to estimate how many cases went to each CSB, both for the raw data and for the adjusted data. This is done based on the overall percent of consultations that went to each CSB from 2018-2019.
+
+```{r}
+mal.csb <- case.seek %>%
+  left_join(consult.catchment, by = "comm_fkt") %>%
+  mutate(mal_case_csb = mal_case_seek * perc_consult,
+         raw_case_csb = mal_case_raw * perc_consult) %>%
+  group_by(CSB, date) %>%
+  summarise(mal_case_csb = sum(mal_case_csb, na.rm = T),
+            raw_case_csb = sum(raw_case_csb, na.rm = T))
+```
+
+How do these compare?
+
+```{r}
+ggplot(mal.csb, aes(x = date)) +
+  geom_line(aes(y = mal_case_csb), color = "darkred") +
+  geom_line(aes(y = raw_case_csb), linetype = "dashed") +
+  facet_wrap(~CSB, scales = "free")
+```
+
+Actually not too bad when aggregated to this level. One concern is whatever is happening in Kelilalina in 02/03 2018, and Tsaratanana and Ambohimiera in early 2020. I suspect this is due to stockout info. So what we are actually reporting is the number of symptomatic individuals seeking care at a CSB.
+
+Looking into it: 
+
+- Kelilalina CSB had 50% and 90% stockout in 02 and 03 2018
+- Tsaratanana's issue was 02/03 2020. It had high stockout rates in those months
+- Ambohimiera was just feb 2020, we don't have data for that csb for stockout but it was probably impacted by Tsaratanana's stockout.
+
+## Compare with care-seeking fever as CSBs
+
+From the stockout data from the DHIS, we have some numbers on the number of care-seeking fever that we can compare to our estimates. We only have it for CSB 2.
+
+```{r}
+fever.seek.true <- stock %>%
+  mutate(prop_case_test = rdt_tests_done/num_case_fever) %>%
+  select(date, csb, num_case_fever, rdt_tests_done, prop_case_test) %>%
+  mutate(CSB = toupper(gsub("CSB2 ", "", csb)))
+
+ungroup(mal.csb) %>%
+  #only CSB1
+  filter(CSB %in% fever.seek.true$CSB) %>%
+  left_join(fever.seek.true, by = c("CSB", "date")) %>% 
+  select(CSB, date, mal_case_csb, raw_case_csb, num_case_fever) %>% 
+  pivot_longer(cols = c("mal_case_csb", "raw_case_csb", "num_case_fever"), 
+               names_to = "measure", values_to = "value") %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = value, color = measure, linetype = measure)) +
+  facet_wrap(~CSB, scales = "free")
+```
+
+Disconnects between the malaria cases (raw and back-transformed) and the number of fever cases are that the malaria cases are meant to be interpreted as the number of malaria-positive individuals who will seek care at that CSB, the fever is all individuals with fever who showed up (a proportion of which were not malaria positive). In fact, we can adjust this further by using the percent positive rate from teh RDTs to see how that matches:
+
+```{r}
+dhis.mal.seek <- stock %>%
+  mutate(CSB = toupper(gsub("CSB2 ", "", csb))) %>%
+  mutate(prop_case_test = rdt_tests_done/num_case_fever) %>%
+  mutate(pos_rate = rdt_tests_pos/rdt_tests_done) %>%
+  select(date, CSB, num_case_fever, rdt_tests_done, prop_case_test, pos_rate)
+
+ggplot(dhis.mal.seek, aes(x = date,  y = pos_rate)) +
+  geom_line(aes(color = CSB))
+
+#use the positivity rate to estimate number of malaria care-seeking cases at CSB
+ungroup(mal.csb) %>%
+  #only CSB1
+  filter(CSB %in% dhis.mal.seek$CSB) %>%
+  left_join(dhis.mal.seek, by = c("CSB", "date")) %>% 
+  mutate(dhis_fever_mal = num_case_fever * pos_rate) %>%
+  select(CSB, date, mal_case_csb, raw_case_csb, dhis_fever_mal) %>% 
+  pivot_longer(cols = c("mal_case_csb", "raw_case_csb", "dhis_fever_mal"), 
+               names_to = "measure", values_to = "value") %>%
+  ggplot(aes(x = date)) +
+  geom_line(aes(y = value, color = measure, linetype = measure)) +
+  facet_wrap(~CSB, scales = "free")
+```
+
+Once we account for that, we basically get the total agreement between our data. So what we can do if we want to estimate the number of care seeking fever cases vs. care-seeking malaria cases is back transform. The issue is we don't have this data for the future obviously, but it has super strong seasonality so we could estimate it for each month to make a guess.
+
+## Conclusion
+
+Yes, this method of back-calculating seems to work well becuase it is able to recreate the number of cases at the level of CSB for the "true" data. so I think we can use it for our predictions as well. We will just need to figure out how to estimate things that we don't have for that time period, like hcui (but that is a function of time that we can estimate).
+
+To go over the steps again to make sure I understand them:
+
+1. turn incidence into cases per fokontany
+2. rescale incidence with hcui to estimate the number of cases seeking care at CSBs
+3. aggregate to CSB from consultation-based catchment estimates. This allows a proportion of cases to go to each CSB.
+
+**End Result**: the number of malaria cases expected at each CSB. This can help prepare for ACTs and avoid stockouts in treatment
+
+Another cool thing about this is that if it is done right it can help account for changes in HSS that may make us think that changes are happening to the incidence.
+
+# Create back-calculated data for dashboard
+
+Eventually this will want to be turned into a function that runs monthly on a github action or something. But for now, we'll just do it manually here. It has the historical data and the predicted data for 2021. Easiest may be to just to do this seperately (once on true and once on predictions).
+
+## True data
+
+```{r}
+#incidence to cases by fokontany
+mal.case <- readRDS(here("data/malaria-data.rds")) %>%
+  select(comm_fkt, date, true_y)
+  left_join(filter(pop, age_class == "all")) %>%
+  mutate(mal_case = true_y /1000 * pop_month)
+
+#rscale by hcui
+#this is using an approximated hcui for now because it is all ages
+hcui.mean <- select(hcui, comm_fkt, date, age_class, scale_hcui, palu_rate_raw) %>%
+  left_join(pop) %>%
+  #calculate population weighted hcui and total cases
+  mutate(mal_case = palu_rate_raw / 1000 * pop_month) %>%
+  group_by(comm_fkt, date) %>%
+  summarise(hcui = weighted.mean(scale_hcui, w = pop_month)) %>%
+  ungroup()
+
+case.seek <- select(mal.case, comm_fkt, date, mal_case, pop = pop_month) %>%
+  left_join(hcui.mean) %>%
+  mutate(mal_case_seek = mal_case*hcui)
+
+# aggregate to CSB level
+mal.csb.true <- case.seek %>%
+  left_join(consult.catchment, by = "comm_fkt") %>%
+  mutate(mal_case_csb = mal_case_seek * perc_consult) %>%
+  group_by(CSB, date) %>%
+  summarise(mal_case_csb = sum(mal_case_csb, na.rm = T)) %>%
+  ungroup()
+
+```
+
+## Predictions
+
+```{r}
+#incidence to cases by fokontany
+mal.case.preds <- readRDS(here("data/malaria-data.rds")) %>%
+  select(comm_fkt, date, lowCI, median, uppCI) %>%
+  left_join(filter(pop, age_class == "all")) %>%
+  mutate_at(.vars = c("lowCI", "median", "uppCI"), 
+            ~(.x / pop_month * 1000))
+
+#rscale by hcui
+#this is using an approximated hcui for now because it is all ages
+hcui.mean <- select(hcui, comm_fkt, date, age_class, scale_hcui, palu_rate_raw) %>%
+  left_join(pop) %>%
+  group_by(comm_fkt, date) %>%
+  summarise(hcui = weighted.mean(scale_hcui, w = pop_month)) %>%
+  ungroup()
+
+case.seek.preds <- mal.case.preds %>%
+  left_join(hcui.mean) %>%
+  mutate_at(.vars = c("lowCI", "median", "uppCI"), 
+            ~(.x * hcui))
+
+# aggregate to CSB level
+mal.csb.preds <- case.seek.preds %>%
+  left_join(consult.catchment, by = "comm_fkt") %>%
+  mutate_at(.vars = c("lowCI", "median", "uppCI"), 
+            ~(.x * perc_consult)) %>%
+  group_by(CSB, date) %>%
+  summarise_at(.vars = c("lowCI", "median", "uppCI"), sum) %>%
+  ungroup()
+```
+
+## Save
+
+```{r}
+saveRDS(mal.csb.true, "data/csb-cases/true-backcalculate.Rds")
+saveRDS(mal.csb.preds, "data/csb-cases/preds-backcalculate.Rds")
+```
+
