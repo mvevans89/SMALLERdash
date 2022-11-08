@@ -7,8 +7,9 @@
 
 #' Plot incidence timeseries
 #' @param plot_data dataframe to plot
-#' @param color.scale color for lines used in plot
-#' @param size vector of linewidths used in plot
+#' @param current.month first day of current month, used to draw prediction line
+#' @param communeSelect name of commune selected in UI
+#' @param fktSelect name of fokontany selected in UI
 #' @import ggplot2 lubridate stringr
 plot_inc_time <- function(historical = T,
                           current.month = as.Date("2020-12-01"),

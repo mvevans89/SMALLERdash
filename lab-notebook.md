@@ -3,7 +3,7 @@
 
 ## 2022-11-07
 
-Okay I think I have a module that works. Currently, just selects the historical but am working on getting it to select the spatial scale too
+Okay I think I have a module that works. Currently, just selects the historical but am working on getting it to select the spatial scale too. I got this working too, was a bit of a pain to get the selection of the fokontany. Hope is that now it should be fairly simple to modify this for the next plot.
 
 ## 2022-11-04
 

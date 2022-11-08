@@ -18,7 +18,7 @@ mod_incidence_time_ui <- function(id){
             selectInput(ns("commune"), label = "Choisir un commune:",
                         choices = c("District","Ambiabe", "Ambohimanga du Sud", "Ambohimiera", "Ampasinambo",
                           "Analampasina", "Androrangavola", "Antaretra", "Antsindra",
-                          "Fasintsara", "Ifanadiana", "Kelilalina", "Marhoharatra",
+                          "Fasintsara", "Ifanadiana", "Kelilalina", "Maroharatra",
                           "Marotoko", 'Ranomafana', "Tsaratanana"),
                         selected = "District")),
     column(3,

@@ -16,20 +16,29 @@ app_ui <- function(request) {
 
         dashboardHeader(title = "Paludisme Prédictions"),
 
-        dashboardSidebar(width = 300,
+        dashboardSidebar(width = 200,
             sidebarMenu(
               menuItem("Home", tabName = "Home", icon = icon("home")),
-              menuItem("Incidence", tabName = "incidence")
+              # menuItem("Incidence", tabName = "incidence")
+              menuItem("Incidence", tabName = "inc_head",
+                       menuSubItem("Séries Temporels", tabName = "incidence"),
+                       menuSubItem("Cartographie", tabName = "incMap"))
             ) # end sidebarMenu
                          ), #end dashboardSidebar
         dashboardBody(
 
           tabItems(
-            tabItem(tabName = 'home',
-                    "Landing Page for the App"),
+            #home landing page
+            tabItem(tabName = 'home'
+                    ),
+            #incidence tab
             tabItem(tabName = 'incidence',
               #contains the plot of incidence time series
-              mod_incidence_time_ui("inc1"))
+              mod_incidence_time_ui("inc1")), #ends incidence tab
+
+            tabItem(tabName = "incMap"
+
+                    )
 
           )
         ) #end dashboardBody

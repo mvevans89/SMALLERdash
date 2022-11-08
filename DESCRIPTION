@@ -13,6 +13,7 @@ Imports:
     golem (>= 0.3.4),
     htmltools,
     lubridate,
+    sf,
     shiny (>= 1.7.1),
     stringr
 Encoding: UTF-8
