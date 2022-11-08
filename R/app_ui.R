@@ -36,8 +36,9 @@ app_ui <- function(request) {
               #contains the plot of incidence time series
               mod_incidence_time_ui("inc1")), #ends incidence tab
 
-            tabItem(tabName = "incMap"
-
+            tabItem(tabName = "incMap",
+                    #map of incidence
+                    mod_incidence_map_ui("map_inc1")
                     )
 
           )

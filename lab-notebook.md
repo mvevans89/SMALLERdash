@@ -1,6 +1,26 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2022-11-08
+
+Havng issues with the reactive zoom workign within a modele. I'm pretty sure it is possible, but the problem is I have like two reactive modules working with it. A helpful SO post:
+
+https://stackoverflow.com/questions/67167626/is-it-possible-to-pass-leaflet-map-to-another-module
+
+I got it to move, but then the problem is it isn't highlightable via the proxy. At least not in an easy way.
+
+ahh okay I have it to zoom now based on a "go" button. And then I think I can pretty easily make it just remap each time (but it will be slow).
+
+Got the map working. I also added a button to reset the zooming but it doesn't work yet. This is an extra feature we can work on later.
+
+I got the map module working in the full app!
+
+**Next steps:**
+- cases time series module
+- cases map module
+- stockout module
+- add map of relative risk (this is an extra I can do after everything is done)
+
 ## 2022-11-07
 
 Okay I think I have a module that works. Currently, just selects the historical but am working on getting it to select the spatial scale too. I got this working too, was a bit of a pain to get the selection of the fokontany. Hope is that now it should be fairly simple to modify this for the next plot.

@@ -7,6 +7,8 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
+#' @importFrom shinyWidgets airDatepickerInput
+#' @importFrom leaflet leafletOutput renderLeaflet
 mod_incidence_map_ui <- function(id){
   ns <- NS(id)
   fluidRow(
@@ -47,6 +49,10 @@ mod_incidence_map_ui <- function(id){
 #' incidence_map Server Functions
 #'
 #' @noRd
+#'
+#' @import dplyr
+#' @import leaflet
+#' @import sf
 mod_incidence_map_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
@@ -61,23 +67,23 @@ mod_incidence_map_server <- function(id){
     #base map
     data.subset <- filter(full.data, date == as.Date("2020-12-01")) %>%
       mutate(highlight = "#4d4d4d") %>%
-      mutate(highlight_wt = 1)
+      mutate(highlight_wt = 2)
     output$map <- renderLeaflet(plot_inc_map(map_data = data.subset))
 
     #remake the map when the button is clicked
     observeEvent(input$go_map, {
-      cat(file=stderr(), "clicked allez") #to debug
+      # cat(file=stderr(), "clicked allez") #to debug
       #subset to a new month
       data.subset <- filter(full.data,
                             date == as.Date(input$monthSelect, origin = as.Date("1970-01-01"))) %>%
         #highlight the selected commune/fokontany
         mutate(highlight = case_when(
           commune %in% toupper(input$commune) & fokontany %in% toupper(input$fokontany) ~ "darkred",
-          TRUE ~ "#d4d4d"
+          TRUE ~ "#4d4d4d"
         )) %>%
         mutate(highlight_wt = case_when(
-          commune %in% toupper(input$commune) & fokontany %in% toupper(input$fokontany) ~3,
-          TRUE ~ 1
+          commune %in% toupper(input$commune) & fokontany %in% toupper(input$fokontany) ~ 5,
+          TRUE ~ 2
         ))
       output$map <- renderLeaflet(plot_inc_map(map_data = data.subset))
 
@@ -112,21 +118,6 @@ mod_fktselect_server <- function(id){
   })
 }
 
-mod_zoom_server <- function(id, made.map){
-
-  moduleServer(id, function(input,output,session){
-  ns <- session$ns
-
-  observeEvent(input$fokontany, {
-    #identify coordinates to zoom to
-    this.zoom <- zoom.coords %>%
-      filter(commune %in% toupper(input$commune), fokontany %in% toupper(input$fokontany))
-    #update map with zoom
-    made.map() %>%
-      setView(lat = this.zoom$lat, lng = this.zoom$lon, zoom = 10)
-  })
-  })
-}
 
 #test function
 inc_map_demo <- function(){
@@ -134,6 +125,7 @@ inc_map_demo <- function(){
   source("R/utils_incidence_map.R")
   source("R/leaflet-legend-decreasing.R")
   #declare packages
+  #to add packages to the package use usethis::use_package
   library(shiny)
   library(shinyWidgets)
   library(dplyr)

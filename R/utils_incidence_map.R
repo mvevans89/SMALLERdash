@@ -15,21 +15,12 @@ plot_inc_map <- function(map_data){
   # library(leaflet)
   # source("R/leaflet-legend-decreasing.R")
 
-  # fkt.poly <- readRDS(("data/ifd_fokontany_poly.rds")) %>%
-  #   #reproject to WGS84
-  #   st_transform(4326) %>%
-  #   select(comm_fkt)
-  #
   # #in function for now just to make sure it works, but will do in server-mod or even beforehand and save
   # map_data <- readRDS("data/for-app/inc_map_popup.rds") %>%
   #   filter(date == as.Date("2020-12-01")) %>%
   #   mutate(highlight = ifelse(comm_fkt == "IFANADIANA_IFANADIANA", "darkred","#4d4d4d")) %>%
   #   mutate(highlight_wt = ifelse(comm_fkt == "IFANADIANA_IFANADIANA", 3,1))
 
-
-  #identify zoom coordinates (probably do in the server side)
-  # zoom.coords <- readRDS("data/for-app/fkt-cent.rds") %>%
-  #   filter(commune %in% toupper(communeSelect), fokontany %in% toupper(fktSelect))
 
   colorpal <- colorNumeric(
     palette = "YlOrRd",
