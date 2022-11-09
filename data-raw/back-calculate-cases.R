@@ -14,6 +14,7 @@ options(stringsAsFactors = F, scipen = 999)
 library(ggplot2); theme_set(theme_bw())
 library(tidyr)
 library(lubridate)
+library(sf)
 
 #should set wd to project directory
 library(here)
@@ -95,7 +96,8 @@ mal.csb.preds <- case.seek.preds %>%
 saveRDS(mal.csb.true, "data/csb-cases/true-backcalculate.Rds")
 saveRDS(mal.csb.preds, "data/csb-cases/preds-backcalculate.Rds")
 
-# Create data for plot ###################
+# Create data for timeseries ###################
+# big difference is that historical is true and future is predicted
 
 #this manually sets the date of prediction
 current.month <- as.Date("2020-12-01")
@@ -135,3 +137,45 @@ plot.data.district <- plot.data.csb %>%
 
 saveRDS(plot.data.csb, "data/for-app/cases-csb.rds")
 saveRDS(plot.data.district, "data/for-app/cases-district.rds")
+
+# Spatial Case Data ############################
+
+#csb locations
+csb.pts <- readRDS(here("data/csb_points.rds")) %>%
+  st_transform(4326)
+
+csb.preds <- readRDS(here("data/csb-cases/preds-backcalculate.Rds")) %>%
+  mutate(highlight_wt = FALSE) %>%
+  #add spatial lat and lon
+  left_join(csb.pts, by = c("CSB" = 'name')) %>%
+  st_as_sf() %>%
+  mutate(lat = st_coordinates(.)[,2],
+         lon = st_coordinates(.)[,1]) %>%
+  #drop geometry to save space
+  st_drop_geometry() %>%
+  #add popup
+  mutate(popup = paste0("<b>CSB: </b> ", stringr::str_to_title(CSB), " ",
+                        type, "<br>",
+                        "<b>Mois: </b> ", date, "<br>",
+                        "<b>Cas Prédit: </b> ", round(median), "<br>",
+                        "<b>Éventail: </b> ", round(lowCI), " - ", round(uppCI))) %>%
+  #fix NA for when data is missing
+  mutate(popup = ifelse(is.na(popup),
+                        paste0("<b>CSB: </b> ", stringr::str_to_title(CSB), " ",
+                               type, "<br>",
+                               "<b>Mois: </b> ", date, "<br>",
+                               "<b>Cas Prédit: </b> Inconnu <br>",
+                               "<b>Éventail: </b> Inconu"),
+                        popup))
+
+#coordinates for zooming
+zoom.coords <- csb.pts %>%
+  mutate(lat = as.numeric(st_coordinates(.)[,2]),
+         lon = as.numeric(st_coordinates(.)[,1])) %>%
+  st_drop_geometry() %>%
+  select(CSB = name, lat, lon)
+
+## Save #################
+
+saveRDS(zoom.coords, "data/for-app/csb-cent.rds")
+saveRDS(csb.preds, "data/for-app/cases-csb-sp.rds")

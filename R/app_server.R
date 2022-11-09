@@ -21,6 +21,9 @@ app_server <- function(input, output, session) {
 
   #CSB case time series module
   mod_cases_time_server("case1")
+
+  #CSB cases mapping module
+  mod_cases_map_server("map_case1")
 }
 
 

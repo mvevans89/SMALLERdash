@@ -1,0 +1,138 @@
+---
+title: "Map of CSB Cases"
+author: "Michelle Evans"
+date: "2022-11-03"
+format: html
+editor: source
+---
+
+
+```{r}
+#| include: false
+
+options(stringsAsFactors = F, scipen = 999)
+
+library(ggplot2); theme_set(theme_bw())
+library(lubridate)
+library(sf)
+library(leaflet)
+
+#should set wd to project directory
+library(here)
+
+library(tidylog)
+library(dplyr)
+
+source(here("R/leaflet-legend-decreasing.R")) #leaflet legend that makes more sense
+```
+
+This is how we will make the map of cases by CSB. I think it makes the most sense to plot the CSB points and then the size/color of the points can be related to the number of cases.
+
+```{r}
+#this should be done in the save data to repo file once it is finalized
+
+#csb locations
+csb.pts <- readRDS(here("data/csb_points.rds")) %>%
+  st_transform(4326)
+
+csb.preds <- readRDS(here("data/csb-cases/preds-backcalculate.Rds")) %>%
+  mutate(highlight_wt = FALSE) %>%
+  #add spatial lat and lon
+  left_join(csb.pts, by = c("CSB" = 'name')) %>%
+  st_as_sf() %>%
+  mutate(lat = st_coordinates(.)[,2],
+         lon = st_coordinates(.)[,1]) %>%
+  #drop geometry to save space
+  st_drop_geometry() %>%
+  #add popup
+  mutate(popup = paste0("<b>CSB: </b> ", stringr::str_to_title(CSB), " ", 
+                               type, "<br>",
+                        "<b>Mois: </b> ", date, "<br>",
+                        "<b>Cas Prédit: </b> ", round(median), "<br>",
+                        "<b>Éventail: </b> ", round(lowCI), " - ", round(uppCI))) %>%
+  #fix NA for when data is missing
+  mutate(popup = ifelse(is.na(popup),
+                        paste0("<b>CSB: </b> ", stringr::str_to_title(CSB), " ", 
+                               type, "<br>",
+                        "<b>Mois: </b> ", date, "<br>",
+                        "<b>Cas Prédit: </b> Inconnu <br>",
+                        "<b>Éventail: </b> Inconu"),
+                        popup))
+
+zoom.coords <- csb.pts %>%
+  mutate(lat = st_coordinates(.)[,2],
+         lon = st_coordinates(.)[,1]) %>%
+  st_drop_geometry() %>%
+  select(CSB = name, lat, lon)
+
+#also commune outlines just to help people make sense of stuff
+comm.poly <- readRDS(here("data/ifd_commune_poly.rds")) %>%
+  st_transform(4326)
+```
+
+General idea is just a map of each month, and then the user can select the month and zoom onto a CSB.
+
+```{r}
+#interactive bits
+current.month <- as.Date("2020-12-01")
+csbSelect <- "Ifanadiana"
+
+map_data <- filter(csb.preds, date == current.month) %>%
+  #aesthetics for zoom/highlight
+  mutate(highlight = case_when(
+    CSB %in% toupper(csbSelect) ~ TRUE,
+    TRUE ~ FALSE
+  )) %>%
+  #create radius variable (rescale to pixel values)
+  mutate(radius = scales::rescale(median, to = c(10,40)))
+
+this.zoom <- zoom.coords %>%
+  filter(CSB %in% toupper(csbSelect))
+
+```
+
+Define colors. Use reverse for legend
+```{r}
+colorpal <- colorNumeric(
+    palette = "YlOrRd",
+    domain = map_data$median,
+    na.color = NA
+)
+
+colorpalLegend <- colorNumeric(
+    palette = "YlOrRd",
+    domain = map_data$median,
+    na.color = NA,
+    reverse = TRUE
+)
+```
+
+Make the map
+
+```{r}
+leaflet(map_data) %>%
+  addTiles() %>%
+  setView(lat = -21.3, lng = 47.6, zoom = 10) %>%
+  addPolygons(data = comm.poly,
+              fillOpacity = 0,
+              opacity = 1,
+              weight  = 1,
+              color = "black") %>%
+  addCircleMarkers(data = map_data, lng = ~lon, lat = ~lat,
+    fillColor = ~colorpal(median),
+    radius = ~radius,
+    color = "black", 
+    # stroke = ~highlight_wt,
+    weight = ~ifelse(highlight_wt,4,1),
+    fillOpacity = 1,
+    popup = ~popup,
+    label = ~CSB,
+    labelOptions = labelOptions(noHide = TRUE, direction = "bottom", 
+                                style = list(
+                                "font-size" = "8px"
+                                ))
+  ) %>%
+  addLegend_decreasing("bottomright", pal = colorpal, values = ~median,
+                         title = "Cas Paludisme<br>Predit", na.label = "", decreasing = TRUE)
+```
+

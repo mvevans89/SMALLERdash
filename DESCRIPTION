@@ -14,6 +14,7 @@ Imports:
     htmltools,
     leaflet,
     lubridate,
+    scales,
     sf,
     shiny (>= 1.7.1),
     shinyWidgets,

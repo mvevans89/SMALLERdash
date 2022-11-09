@@ -11,6 +11,7 @@
 #' @param communeSelect name of commune selected in UI
 #' @param fktSelect name of fokontany selected in UI
 #' @import ggplot2 lubridate stringr
+#' @noRd
 plot_inc_time <- function(historical = T,
                           current.month = as.Date("2020-12-01"),
                           communeSelect = "District",

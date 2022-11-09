@@ -57,8 +57,6 @@ mod_incidence_map_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
 
-
-
     #load data
     full.data <- readRDS("data/for-app/inc_map_popup.rds") %>%
       mutate(highlight = factor("normal"))

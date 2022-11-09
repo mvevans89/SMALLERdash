@@ -22,7 +22,7 @@ app_ui <- function(request) {
               # menuItem("Incidence", tabName = "incidence")
               menuItem("Incidence", tabName = "inc_head",
                        menuSubItem("Séries Temporels", tabName = "incidence"),
-                       menuSubItem("Cartographie", tabName = "incMap")),
+                       menuSubItem("Cartographie", tabName = "inc_map")),
               menuItem("Cas au CSB", tabname = "case_head",
                        menuSubItem("Séries Temporels", tabName = "case_time"),
                        menuSubItem("Cartographie", tabName = "case_map"))
@@ -39,14 +39,18 @@ app_ui <- function(request) {
               #contains the plot of incidence time series
               mod_incidence_time_ui("inc1")), #ends incidence tab
 
-            tabItem(tabName = "incMap",
+            tabItem(tabName = "inc_map",
                     #map of incidence
                     mod_incidence_map_ui("map_inc1")
                     ),
 
             tabItem(tabName = "case_time",
                     #time series of cases
-                    mod_cases_time_ui("case1"))
+                    mod_cases_time_ui("case1")),
+
+            tabItem(tabName =  "case_map",
+                    #selectin and map of cases
+                    mod_cases_map_ui("map_case1"))
 
           )
         ) #end dashboardBody
