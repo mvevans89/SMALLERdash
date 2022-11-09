@@ -234,12 +234,16 @@ Another cool thing about this is that if it is done right it can help account fo
 
 Eventually this will want to be turned into a function that runs monthly on a github action or something. But for now, we'll just do it manually here. It has the historical data and the predicted data for 2021. Easiest may be to just to do this seperately (once on true and once on predictions).
 
+this is now done in `data-raw/back-calculate-cases.R`.
+
 ## True data
 
 ```{r}
+#| eval: false
+
 #incidence to cases by fokontany
 mal.case <- readRDS(here("data/malaria-data.rds")) %>%
-  select(comm_fkt, date, true_y)
+  select(comm_fkt, date, true_y) %>%
   left_join(filter(pop, age_class == "all")) %>%
   mutate(mal_case = true_y /1000 * pop_month)
 
@@ -270,6 +274,8 @@ mal.csb.true <- case.seek %>%
 ## Predictions
 
 ```{r}
+#| eval: false
+#| 
 #incidence to cases by fokontany
 mal.case.preds <- readRDS(here("data/malaria-data.rds")) %>%
   select(comm_fkt, date, lowCI, median, uppCI) %>%
@@ -303,6 +309,7 @@ mal.csb.preds <- case.seek.preds %>%
 ## Save
 
 ```{r}
+#| eval: false
 saveRDS(mal.csb.true, "data/csb-cases/true-backcalculate.Rds")
 saveRDS(mal.csb.preds, "data/csb-cases/preds-backcalculate.Rds")
 ```
