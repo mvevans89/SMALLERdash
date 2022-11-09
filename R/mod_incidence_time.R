@@ -70,7 +70,7 @@ mod_fktselect_server <- function(id){
 #test function
 inc_time_demo <- function(){
   #source function for plotting
-  source("R/utils_incidence-timeseries.R")
+  source("R/utils_incidence_time.R")
   #declare packages
   library(shiny)
   library(dplyr)

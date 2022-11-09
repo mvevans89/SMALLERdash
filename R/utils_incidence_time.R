@@ -6,7 +6,7 @@
 # inc.fkt <- readRDS("data/for-app/inc-fokontany.rds")
 
 #' Plot incidence timeseries
-#' @param plot_data dataframe to plot
+#' @param historicalwhether to plot historical data, default = T
 #' @param current.month first day of current month, used to draw prediction line
 #' @param communeSelect name of commune selected in UI
 #' @param fktSelect name of fokontany selected in UI
@@ -57,16 +57,16 @@ plot_inc_time <- function(historical = T,
     # geom_point(aes(y = inc_true, color = season)) +
     geom_line(aes(y = inc_med, color = season, group = season, size = season)) +
     geom_vline(aes(xintercept = month.abb[month(current.month)]), color = "gray50") +
-    geom_label(data = data.frame(), aes(x = 10.5, y = pred.label.y, label = "Prediction"), hjust = 0.5) +
-    xlab("Month") +
+    geom_label(data = data.frame(), aes(x = 10.5, y = pred.label.y, label = "Prédiction"), hjust = 0.5) +
+    xlab("Mois") +
     ylab("Incidence (per 1000)") +
-    scale_color_manual(values = color.scale, name = "Season") +
-    scale_size_manual(values = size, name = "Season") +
+    scale_color_manual(values = color.scale, name = "Saison") +
+    scale_size_manual(values = size, name = "Saison") +
     coord_cartesian(xlim = c(1.5,11.5), clip = "on") +
     theme(legend.position = "bottom") +
     theme_bw() +
     labs(title = p.title,
-         subtitle = "Predicted Jan - Mar 2021")
+         subtitle = "Predit Jan - Mar 2021")
 
   # cat(file=stderr(), "ran plotting function")
 }
