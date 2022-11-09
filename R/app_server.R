@@ -24,6 +24,9 @@ app_server <- function(input, output, session) {
 
   #CSB cases mapping module
   mod_cases_map_server("map_case1")
+
+  #stockout barchart module
+  mod_stock_act_server("act1")
 }
 
 

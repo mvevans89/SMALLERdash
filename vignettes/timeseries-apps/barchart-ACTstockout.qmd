@@ -113,7 +113,7 @@ The number of cases in 2021 was super high and makes it seem like we are doing a
 
 ## Plot true stockout
 
-The only problem with this is we don't actually have the number of positive RDT's, only RDT's done and the number treated with ACT. But it shows qualitatively that there was a huge incrase in cases in 2021. So this only shows those treated in 2021.
+The only problem with this is we don't actually have the number of positive RDT's, only RDT's done and the number treated with ACT. But it shows qualitatively that there was a huge increase in cases in 2021. So this only shows those treated in 2021.
 
 ```{r}
 stock.true <- stock %>%

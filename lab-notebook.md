@@ -1,6 +1,21 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2022-11-09
+
+Okay, now that I have a workflow, things are going pretty quick. Made the cases time series module in about 90 minutes.
+
+Took the rest of the morning to create the CSB case mapping module. It could be nice to change the shape of those circleMarkers (if possible) to match the different CSB types
+
+**TO DO:**
+- stockout module
+- add map of relative risk (this is an extra I can do after everything is done)
+
+**Model to do:**
+- run true prediction models (i.e. only using data from 2-3 months prior) for dashboard
+- run models on each age group individually for dashboard and combine
+- may be worth looking into rainfall predictions from www.wmolc.org. they give probabilities of below/above normal for three months into the future for precipitation and temperature. very broad but could help for scenarios. [this is maybe a thing for future me like in a year for scenario planning]
+
 ## 2022-11-08
 
 Havng issues with the reactive zoom workign within a modele. I'm pretty sure it is possible, but the problem is I have like two reactive modules working with it. A helpful SO post:

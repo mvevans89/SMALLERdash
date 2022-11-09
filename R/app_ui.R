@@ -14,7 +14,8 @@ app_ui <- function(request) {
 
         skin = "green",
 
-        dashboardHeader(title = "Paludisme Prédictions"),
+        dashboardHeader(title = "SMALLER: Prédire le palu dans le district d'Ifanadiana",
+                        titleWidth = 600),
 
         dashboardSidebar(width = 200,
             sidebarMenu(
@@ -25,14 +26,17 @@ app_ui <- function(request) {
                        menuSubItem("Cartographie", tabName = "inc_map")),
               menuItem("Cas au CSB", tabname = "case_head",
                        menuSubItem("Séries Temporels", tabName = "case_time"),
-                       menuSubItem("Cartographie", tabName = "case_map"))
+                       menuSubItem("Cartographie", tabName = "case_map")),
+              menuItem("Ruptures de Stock", tabName = "stock_head",
+                       menuSubItem("CSB2", tabName = "stock_csb2"))
             ) # end sidebarMenu
                          ), #end dashboardSidebar
         dashboardBody(
 
           tabItems(
             #home landing page
-            tabItem(tabName = 'home'
+            tabItem(tabName = 'home',
+
                     ),
             #incidence tab
             tabItem(tabName = 'incidence',
@@ -50,7 +54,11 @@ app_ui <- function(request) {
 
             tabItem(tabName =  "case_map",
                     #selectin and map of cases
-                    mod_cases_map_ui("map_case1"))
+                    mod_cases_map_ui("map_case1")),
+
+            tabItem(tabName = "stock_csb2",
+                    #bar chart of ACTs
+                    mod_stock_act_ui("act1"))
 
           )
         ) #end dashboardBody
