@@ -78,7 +78,7 @@ mod_incidence_map_server <- function(id){
                             date == as.Date(input$monthSelect, origin = as.Date("1970-01-01"))) %>%
         #highlight the selected commune/fokontany
         mutate(highlight = case_when(
-          commune %in% toupper(input$commune) & fokontany %in% toupper(input$fokontany) ~ "darkred",
+          commune %in% toupper(input$commune) & fokontany %in% toupper(input$fokontany) ~ "black",
           TRUE ~ "#4d4d4d"
         )) %>%
         mutate(highlight_wt = case_when(

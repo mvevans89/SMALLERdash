@@ -18,6 +18,9 @@ app_server <- function(input, output, session) {
   #incidence mapping module
   mod_fktselect_server("map_inc1")
   mod_incidence_map_server("map_inc1")
+
+  #CSB case time series module
+  mod_cases_time_server("case1")
 }
 
 

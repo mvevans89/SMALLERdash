@@ -18,7 +18,7 @@ plot_inc_time(
 
 \item{fktSelect}{name of fokontany selected in UI}
 
-\item{plot_data}{dataframe to plot}
+\item{historicalwhether}{to plot historical data, default = T}
 }
 \description{
 Plot incidence timeseries

@@ -22,7 +22,10 @@ app_ui <- function(request) {
               # menuItem("Incidence", tabName = "incidence")
               menuItem("Incidence", tabName = "inc_head",
                        menuSubItem("Séries Temporels", tabName = "incidence"),
-                       menuSubItem("Cartographie", tabName = "incMap"))
+                       menuSubItem("Cartographie", tabName = "incMap")),
+              menuItem("Cas au CSB", tabname = "case_head",
+                       menuSubItem("Séries Temporels", tabName = "case_time"),
+                       menuSubItem("Cartographie", tabName = "case_map"))
             ) # end sidebarMenu
                          ), #end dashboardSidebar
         dashboardBody(
@@ -39,7 +42,11 @@ app_ui <- function(request) {
             tabItem(tabName = "incMap",
                     #map of incidence
                     mod_incidence_map_ui("map_inc1")
-                    )
+                    ),
+
+            tabItem(tabName = "case_time",
+                    #time series of cases
+                    mod_cases_time_ui("case1"))
 
           )
         ) #end dashboardBody
