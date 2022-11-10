@@ -19,7 +19,7 @@ app_ui <- function(request) {
 
         dashboardSidebar(width = 200,
             sidebarMenu(
-              menuItem("Home", tabName = "Home", icon = icon("home")),
+              menuItem("Home", tabName = "home", icon = icon("home")),
               # menuItem("Incidence", tabName = "incidence")
               menuItem("Incidence", tabName = "inc_head",
                        menuSubItem("Séries Temporels", tabName = "incidence"),
@@ -36,12 +36,12 @@ app_ui <- function(request) {
           tabItems(
             #home landing page
             tabItem(tabName = 'home',
-
+                h1("Bienvenue!")
                     ),
             #incidence tab
             tabItem(tabName = 'incidence',
               #contains the plot of incidence time series
-              mod_incidence_time_ui("inc1")), #ends incidence tab
+              mod_incidence_time_plotly_ui("inc1")), #ends incidence tab
 
             tabItem(tabName = "inc_map",
                     #map of incidence

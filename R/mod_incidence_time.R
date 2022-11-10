@@ -34,6 +34,37 @@ mod_incidence_time_ui <- function(id){
   )#fluid row
 }
 
+mod_incidence_time_plotly_ui <- function(id){
+  ns <- NS(id)
+  fluidRow(
+    #inputs
+    column(3,
+           #commune selection
+           selectInput(ns("commune"), label = "Choisir un commune:",
+                       choices = c("District","Ambiabe", "Ambohimanga du Sud", "Ambohimiera", "Ampasinambo",
+                                   "Analampasina", "Androrangavola", "Antaretra", "Antsindra",
+                                   "Fasintsara", "Ifanadiana", "Kelilalina", "Maroharatra",
+                                   "Marotoko", 'Ranomafana', "Tsaratanana"),
+                       selected = "District")),
+    column(3,
+           #fokontany selection (this gets updated based on commune)
+           selectInput(ns("fokontany"), label = "Choisir un fokontany:",
+                       choices = c("Selectionner"), selected = "Selectionner"))
+    , #fluidRow
+    column(12,
+           plotlyOutput(ns("plot"))
+    )
+  )#fluid row
+}
+
+mod_incidence_time_plotly_server <- function(id){
+  moduleServer(id, function(input, output, session){
+    ns <- session$ns
+    output$plot <- renderPlotly({plot_inc_time_plotly(communeSelect = input$commune,
+                                             fktSelect = input$fokontany)})
+  })
+}
+
 #' incidence_time Server Functions
 #'
 #' @noRd
@@ -78,12 +109,14 @@ inc_time_demo <- function(){
   library(stringr)
 
   ui <- fluidPage(
-      mod_incidence_time_ui("inc1")
+      # mod_incidence_time_ui("inc1")
+      mod_incidence_time_plotly_ui("inc1")
   )
   server <- function(input, output, session){
 
     mod_fktselect_server("inc1")
     mod_incidence_time_server("inc1")
+    mod_incidence_time_plotly_server("inc1")
   }
   shinyApp(ui, server)
 }

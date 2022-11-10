@@ -1,14 +1,26 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2022-11-10
+
+Some things I want to do to make the dashboard nicer:
+
+1. landing page
+2. information for each page on how it works
+3. maybe update time series to dygraph or nicer timeseries plot. probably plotly would be better in the end for this, but it is almost too interactive and I'm worried will make people confused. but dygraphs was last updated in 2018.... okay better to use plotly 
+
+got plotly up and running for the incience time series. will try to do the same for the cases just so it looks similar across pages
+
 ## 2022-11-09
 
 Okay, now that I have a workflow, things are going pretty quick. Made the cases time series module in about 90 minutes.
 
-Took the rest of the morning to create the CSB case mapping module. It could be nice to change the shape of those circleMarkers (if possible) to match the different CSB types
+Took the rest of the morning to create the CSB case mapping module. It could be nice to change the shape of those circleMarkers (if possible) to match the different CSB types.
+
+I think the next couple of days I want to write up some nice language for the landing page and more instructions. plus look into using boxes and other dashboard structures to make the page themselves look nicer.
 
 **TO DO:**
-- stockout module
+- ~~stockout module~~
 - add map of relative risk (this is an extra I can do after everything is done)
 
 **Model to do:**
