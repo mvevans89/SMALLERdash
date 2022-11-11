@@ -63,3 +63,95 @@ plot_cases_time <- function(historical = T,
 
   # cat(file=stderr(), "ran plotting function") #debug in Shiny
 }
+
+#' plot_cases_time_plotly
+#'
+#' @description Function to plot the CSB cases time series using plotly
+#'
+#' @param current.month current month that predictions go from
+#' @param csbSelect which CSB to plot, defaults to district-wide
+#' @import plotly lubridate stringr
+#' @importFrom scales alpha
+#' @importFrom tidyr pivot_wider
+#'
+#' @return ggplot of time series
+#'
+#' @noRd
+plot_cases_time_plotly <- function(
+                            current.month = as.Date("2020-12-01"),
+                            csbSelect = "Tous CSBs"){
+
+  #packages
+
+  #to debug
+  # csbSelect = "Tous CSBs"
+
+  # data subset and plot title
+  if(csbSelect == "Tous CSBs"){
+    p.title <- "Cas Predits pour tout Ifanadiana"
+    #load data
+    plot_data <- readRDS("data/for-app/cases-district.rds") %>%
+      ungroup()
+  } else {
+    p.title <- paste("Cas Predits à",
+                     stringr::str_to_title(csbSelect), "CSB")
+    plot_data <- readRDS("data/for-app/cases-csb.rds") %>%
+      filter(CSB %in% toupper(csbSelect))
+  }
+
+  #always show all years
+  color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
+
+  #function for vertical line in plotly
+  vline <- function(x = 0, color = "gray50") {
+    list(
+      type = "line",
+      y0 = 0,
+      y1 = 1,
+      yref = "paper",
+      x0 = x,
+      x1 = x,
+      line = list(color = color, dash="dot", width = 0.5)
+    )
+  }
+
+  #create plotly style data (should be done outside in the future)
+  plotly_data <- plot_data |>
+    select(cases = median, season, month_lab) |>
+    #round for better labels
+    mutate(cases = round(cases,0)) |>
+    mutate(season = gsub("/", "_", paste("Season", stringr::str_trim(season), sep = "_"))) |>
+    tidyr::pivot_wider(names_from = season, values_from = cases)
+  plotly_cis <- plot_data |>
+    filter(season == "Present") |>
+    mutate(lowCI = round(lowCI),
+           uppCI = round(uppCI))
+
+  #return plot
+  plot_ly(plotly_data, showlegend = TRUE) |>
+    add_trace(x = ~month_lab, y = ~Season_2017_2018, type = 'scatter', mode = 'lines',
+              name = "2017/2018", line = list(color = color.scale[1])) |>
+    #add lines for each year
+    add_trace(x = ~month_lab, y = ~Season_2018_2019, type = 'scatter', mode = 'lines',
+              name = "2018/2019", line = list(color = color.scale[2])) |>
+    add_trace(x = ~month_lab, y = ~Season_2019_2020, type = 'scatter', mode = 'lines',
+              name = "2019/2020", line = list(color = color.scale[3])) |>
+    add_trace(x = ~month_lab, y = ~Season_Present, type = 'scatter', mode = 'lines',
+              name = "2020/2021", line = list(color = color.scale[4], width = 4)) |>
+    #add error range
+    add_ribbons(data = plotly_cis, x = ~month_lab, ymin = ~lowCI, ymax = ~uppCI,
+                fillcolor = scales::alpha(color.scale[4],0.2), hoverinfo = 'none',
+                line = list(color = scales::alpha(color.scale[4],0.2)),
+                name = 'Evéntail') |>
+    #add vertical line for prediction area
+    layout(shapes = list(vline(x = 8))) |>
+    layout(hovermode = "x unified",
+           yaxis = list(title = "Total des cas de paludisme au CSBs"),
+           xaxis = list(title = "Mois d'Année"),
+           title = p.title) |>
+    #remove buttons on top
+    config(modeBarButtonsToRemove = c("zoom2d", "zoomIn2d", "zoomOut2d", "pan2d", 'autoScale2d', "resetScale2d"),
+           displaylogo = FALSE)
+
+  # cat(file=stderr(), "ran plotly function") #debug in Shiny
+}

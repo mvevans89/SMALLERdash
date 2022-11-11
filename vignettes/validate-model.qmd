@@ -1,0 +1,100 @@
+---
+title: "Model Validation"
+format: html
+---
+
+This goes through how we validate the model, creating some images that can be used on teh website to show model performance
+
+```{r}
+#| include: false
+
+options(stringsAsFactors = F, scipen = 999)
+
+library(ggplot2); theme_set(theme_bw())
+library(tidyr)
+library(lubridate)
+
+#should set wd to project directory
+library(here)
+
+library(dplyr)
+```
+
+## Malaria Incidence
+
+```{r}
+mal.inc <- readRDS(here("data/raw/malaria-data.rds"))
+```
+
+Just performance in general:
+
+```{r}
+mutate(mal.inc,
+               sq_error = (true_y - median)^2) %>%
+  summarise(rmse = sqrt(mean(sq_error, na.rm = T)))
+  
+```
+
+
+### Validation Plot by Fokontany
+
+```{r}
+filter(mal.inc, comm_fkt %in% c("RANOMAFANA_RANOMAFANA", "TSARATANANA_SANDRAKELY",
+                                 "ANALAMPASINA_AMBARO",  "MAROHARATRA_MALEMIAMBO" )) %>%
+  mutate(type = "Prédiction") |>
+  ggplot(aes(x = date)) +
+  geom_point(aes(y = true_y), alpha = 0.5) +
+  geom_line(aes(y = median, color = type)) +
+  geom_ribbon(aes(ymin = lowCI, ymax = uppCI, fill = type), alpha = 0.3) +
+  facet_wrap(~comm_fkt, scales = "free") +
+  ylab("Incidence (per 1000)") +
+  xlab("Date") +
+    scale_fill_manual(values= "navyblue", name ="") +
+  scale_color_manual(values = "black", name = "") +
+  theme(legend.position = "bottom",
+        legend.background = element_blank())
+
+ggsave(here("inst/app/www/validation-fkt.png"), dpi = 200, width = 14, 
+       height = 12, units = "cm")
+```
+
+## Cases
+
+```{r}
+case.preds <- readRDS(here("data/csb-cases/preds-backcalculate.Rds"))
+case.true <- readRDS(here("data/csb-cases/true-backcalculate.Rds"))
+```
+
+### District Level
+
+```{r}
+district.pred <- case.preds |>
+  select(-CSB)|>
+  group_by(date) |>
+  summarise_all(sum) |>
+  mutate(type = "Prédiction")
+
+district.true <- case.true |>
+  select(-CSB) |>
+  group_by(date) |>
+  summarise(true_case = sum(mal_case_csb))
+```
+
+
+```{r}
+ggplot() +
+  geom_point(data = district.true, aes(x = date, y = true_case), alpha = 0.5) +
+  geom_line(data = district.pred, aes(x = date, y = median, color =  type)) +
+  geom_ribbon(data = district.pred, aes(x = date, ymin = lowCI, 
+                                        ymax = uppCI, fill = type), alpha = 0.3) +
+  ylab("Total Cases in District") +
+  xlab("Date") +
+  scale_fill_manual(values= "navyblue", name ="") +
+  scale_color_manual(values = "black", name = "") +
+  theme(legend.position = c(0.1,0.9),
+        legend.background = element_blank())
+
+ggsave(here("inst/app/www/validation-case.png"), dpi = 200, width = 16, 
+       height = 12, units = "cm")
+```
+

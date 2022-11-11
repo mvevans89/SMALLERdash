@@ -1,0 +1,1 @@
+Cette carte affiche les nombres de cas mensuelle du paludisme symptomatique qui était ou qui seront prise en charge aux CSBs. Vous pouvez choisir un mois d'afficher et un CSB ou vous voulez cibler (zoom) la carte. Quand vous avez fait votre choix, cliquez "Allez!". Cliquez sur les points représentant des CSBs pour voir plus d'informations.

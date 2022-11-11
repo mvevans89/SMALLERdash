@@ -16,7 +16,7 @@ app_server <- function(input, output, session) {
   mod_incidence_map_server("map_inc1")
 
   #CSB case time series module
-  mod_cases_time_server("case1")
+  mod_cases_time_plotly_server("case1")
 
   #CSB cases mapping module
   mod_cases_map_server("map_case1")

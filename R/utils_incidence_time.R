@@ -130,8 +130,8 @@ plot_inc_time_plotly <- function(communeSelect = "District",
     select(incidence = inc_med, season, month_lab) |>
     #round for better labels
     mutate(incidence = round(incidence,2)) |>
-    mutate(season = gsub("/", "_", paste("Season", str_trim(season), sep = "_"))) |>
-    pivot_wider(names_from = season, values_from = incidence)
+    mutate(season = gsub("/", "_", paste("Season", stringr::str_trim(season), sep = "_"))) |>
+    tidyr::pivot_wider(names_from = season, values_from = incidence)
   plotly_cis <- plot_data |>
     filter(season == "Present")
 
@@ -144,7 +144,7 @@ plot_inc_time_plotly <- function(communeSelect = "District",
     add_trace(x = ~month_lab, y = ~Season_2019_2020, type = 'scatter', mode = 'lines',
               name = "2019/2020", line = list(color = color.scale[3])) |>
     add_trace(x = ~month_lab, y = ~Season_Present, type = 'scatter', mode = 'lines',
-              name = "2020/2021", line = list(color = color.scale[4])) |>
+              name = "2020/2021", line = list(color = color.scale[4], width = 4)) |>
     #add error range
     add_ribbons(data = plotly_cis, x = ~month_lab, ymin = ~inc_lowCI, ymax = ~inc_uppCI,
                 fillcolor = scales::alpha(color.scale[4],0.2), hoverinfo = 'none',

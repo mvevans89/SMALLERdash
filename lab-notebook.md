@@ -1,6 +1,15 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2022-11-11
+
+I did all the things! Set up a landing page and added information to each page in the form of markdown documents. 
+
+Now want to explore some validation of the model to add. and to show to Pivot when I am there. done! honestly, I think this is all workign pretty well.
+
+Pushed to github, but think this is a pretty good prototype for now.
+
+
 ## 2022-11-10
 
 Some things I want to do to make the dashboard nicer:
@@ -9,7 +18,9 @@ Some things I want to do to make the dashboard nicer:
 2. information for each page on how it works
 3. maybe update time series to dygraph or nicer timeseries plot. probably plotly would be better in the end for this, but it is almost too interactive and I'm worried will make people confused. but dygraphs was last updated in 2018.... okay better to use plotly 
 
-got plotly up and running for the incience time series. will try to do the same for the cases just so it looks similar across pages
+got plotly up and running for the incience time series. will try to do the same for the cases just so it looks similar across pages. done!
+
+
 
 ## 2022-11-09
 

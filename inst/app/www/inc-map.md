@@ -1,0 +1,1 @@
+Cette carte affiche l'incidence mensuelle du paludisme symptomatique au niveau du  fokontany pour tous les âges. Vous pouvez choisir un mois d'afficher et un fokontany ou vous voulez focaliser (zoom) la carte. Quand vous avez fait votre choix, cliquez "Allez!".
