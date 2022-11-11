@@ -2,7 +2,7 @@
 
 Les predictions visualiser sur cette application ont été créé par un modèle géostatisque. Ce modèle combine les données du système de santé avec des données écologiques télédétectées pour prédire la charge du paludisme en fonction de variables socio-écologiques.
 
-<img src="www/model-workflow.png" alt="Modeling Workflow" width="600" class="center"/>
+<p style="text-align:center;"><img src="www/model-workflow.png" alt="Modeling Workflow" width="600px"></p>
 
 ### Les facteurs prise en compte
 
@@ -12,8 +12,8 @@ Les predictions visualiser sur cette application ont été créé par un modèle
 
 En generale, notre modèle reprodit bien les dynamics du paludisme dans le district. Il a un 'root-mean-square-error' de 54.07 cas per 1000 individus. 
 
-<img src="www/validation-fkt.png" width="600" class="center"/>
+<p style="text-align:center;"><img src="www/validation-fkt.png" width="600px"></p>
 
 Notre estimation de cas aussi resemble le "vrai" nombre de cas vu aux CSBs.
 
-<img src="www/validation-case.png" width="600" class="center"/>
+<p style="text-align:center;"><img src="www/validation-case.png" width="600px"></p>
