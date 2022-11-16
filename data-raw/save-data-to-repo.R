@@ -41,6 +41,87 @@ mal.preds <- filter(mal.preds, date>=as.Date("2017-01-01"), date<=as.Date("2021-
 
 saveRDS(mal.preds, "data/raw/malaria-data.rds")
 
+## Malaria Cases and Incidence for Time Series ###############################################
+
+#adjusted incidence (also contains true)
+mal.data <- readRDS(here("data/raw/malaria-data.rds"))
+
+#population, needed to get incidence at higher spatial aggregations that is population-weighed
+pop <- readRDS(here("data/pop_fkt.rds")) %>%
+  rename(pop = pop_month) %>%
+  filter(age_class == "all")
+#time for current month
+current.month <- as.Date("2020-12-01")
+#order for plotting so last three months are predictions
+month.label.order <- month.abb[((month(current.month)-9):(month(current.month)+2)) %% 12 +1]
+
+#calculated distance weighted of each
+#cases per fokontany
+fkt.mal <- mal.data %>%
+  left_join(pop, by = c("comm_fkt", "date")) %>%
+  #calculate true number of cases
+  mutate(case_lowCI = lowCI * pop / 1000,
+         case_med = median * pop / 1000,
+         case_uppCI = uppCI * pop /1000,
+         case_true = true_y * pop / 1000) %>%
+  select(comm_fkt, date, inc_lowCI = lowCI, inc_med = median, inc_uppCI = uppCI,
+         inc_true = true_y, case_lowCI, case_med, case_uppCI, case_true, pop)
+
+district.mal <- fkt.mal %>%
+  group_by(date) %>%
+  summarise_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI", "pop"), sum, na.rm = T) %>%
+  #change back to incidence
+  ungroup() %>%
+  mutate_at(.vars = c("inc_true" = "case_true", "inc_lowCI" = "case_lowCI",
+                      "inc_med" = "case_med", "inc_uppCI" = "case_uppCI"),
+            ~(.x / pop * 1000))
+
+commune.mal <- fkt.mal %>%
+  separate(comm_fkt, into = c("commune", "fokontany"), sep = "_") %>%
+  group_by(date, commune) %>%
+  summarise_at(.vars = c("case_true", "case_lowCI", "case_med", "case_uppCI", "pop"), sum, na.rm = T) %>%
+  #change back to incidence
+  ungroup() %>%
+  mutate_at(.vars = c("inc_true" = "case_true", "inc_lowCI" = "case_lowCI",
+                      "inc_med" = "case_med", "inc_uppCI" = "case_uppCI"),
+            ~(.x / pop * 1000))
+
+# add bits for plotting (has to be done afterwards)
+create_plot_data <- function(data.original){
+  data.original %>%
+    #create seasonal vs. historical bits
+    filter(date<= current.month %m+% months(3)) %>%
+    mutate(season = case_when(
+      date > current.month %m-% months(9)  ~ "Present",
+      date > current.month %m-% months(9+ 12) ~ " 2019/2020",
+      date > current.month %m-% months(9+ (12*2)) ~ " 2018/2019",
+      date > current.month %m-% months(9+ (12*3)) ~ " 2017/2018",
+      TRUE ~ "drop")
+    ) %>%
+    filter(season != "drop") %>%
+    #ordered labels for months
+    mutate(month_lab = month.abb[month(date)]) %>%
+    #change to ordered factor
+    mutate(month_lab = factor(month_lab, levels = month.label.order)) %>%
+    #historical data is just the real thing, not predictions
+    mutate(inc_lowCI =ifelse(date<= current.month, inc_true, inc_lowCI)) %>%
+    mutate(inc_uppCI =ifelse(date<= current.month,inc_true,  inc_uppCI)) %>%
+    mutate(inc_med = ifelse(date<= current.month, inc_true,  inc_med)) %>%
+    mutate(case_lowCI = round(ifelse(date<= current.month, case_true, case_lowCI))) %>%
+    mutate(case_uppCI = round(ifelse(date<= current.month, case_true, case_uppCI))) %>%
+    mutate(case_med = round(ifelse(date<= current.month, case_true, case_med)))
+}
+
+fkt.plot <- create_plot_data(fkt.mal)
+commune.plot <- create_plot_data(commune.mal)
+district.plot <- create_plot_data(district.mal)
+
+#save all three
+saveRDS(fkt.plot, "data/for-app/inc-fokontany.rds")
+saveRDS(commune.plot, "data/for-app/inc-commune.rds")
+saveRDS(district.plot, "data/for-app/inc-district.rds")
+
+
 ## Create Malaria Predictions with Popups for maps ##############################
 
 fkt.poly <-  readRDS("data/ifd_fokontany_poly.rds") %>%
@@ -102,7 +183,7 @@ stockout <- read.csv("/home/evansm/Dropbox/PIVOT/projet-smaller/malaria-geostat-
 saveRDS(stockout, "data/raw/stockout.rds")
 
 # Population Data #########################
-
+#technically should probably be run first
 pop <- read.csv("/home/evansm/Dropbox/PIVOT/ifd-incidence-adj/data/clean/for-model/population-age-year.csv")
 #add in a population for 2022 so we can interpolate
 pop.2022 <- pop %>%

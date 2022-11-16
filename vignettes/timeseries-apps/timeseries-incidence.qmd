@@ -43,7 +43,7 @@ pop <- readRDS(here("data/pop_fkt.rds")) %>%
   rename(pop = pop_month)
 ```
 
-It would probably be good to have the predictions already grouped by the groups that the interactive bit will call on. Probably fastest is to load data at beginnig and then just call on different data types.
+It would probably be good to have the predictions already grouped by the groups that the interactive bit will call on. Probably fastest is to load data at beginning and then just call on different data types.
 
 ```{r}
 #calculated distance weighted of each
@@ -83,8 +83,8 @@ Currently we only have one age class, but eventually will model all three + the 
 
 ```{r}
 current.month <- as.Date("2020-12-01")
-#need to automate this but it is breaking my head
-month.label.order <- month.abb[c(4:12, 1:3)]
+#order for plotting so last three months are predictions
+month.label.order <- month.abb[((month(current.month)-9):(month(current.month)+2)) %% 12 +1]
 ```
 
 

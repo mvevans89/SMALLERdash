@@ -49,8 +49,11 @@ mod_incidence_time_plotly_ui <- function(id){
     column(3,
            #fokontany selection (this gets updated based on commune)
            selectInput(ns("fokontany"), label = "Choisir un fokontany:",
-                       choices = c("Selectionner"), selected = "Selectionner"))
-    , #fluidRow
+                       choices = c("Selectionner"), selected = "Selectionner")),
+    column(3,
+             selectInput(ns("indicator"), "Choisir un  indicateur:",
+                         choices = c("Cas" = "cases", "Incidence" = "incidence"), selected = "incidence")
+    ), #fluid Row
     column(12,
            plotlyOutput(ns("plot"))
     )
@@ -60,9 +63,11 @@ mod_incidence_time_plotly_ui <- function(id){
 mod_incidence_time_plotly_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
-    output$plot <- renderPlotly({plot_inc_time_plotly(communeSelect = input$commune,
-                                             fktSelect = input$fokontany)})
-  })
+
+      output$plot <- renderPlotly(timeseries_plotly(communeSelect = input$commune,
+                                             fktSelect = input$fokontany,
+                                             indicator = input$indicator))
+  }) #end moduleServer
 }
 
 #' incidence_time Server Functions
@@ -71,6 +76,8 @@ mod_incidence_time_plotly_server <- function(id){
 mod_incidence_time_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
+
+
     output$plot <- renderPlot({plot_inc_time(historical = input$historical,
                                              communeSelect = input$commune,
                                              fktSelect = input$fokontany)})
@@ -107,6 +114,7 @@ inc_time_demo <- function(){
   library(dplyr)
   library(lubridate)
   library(stringr)
+  library(plotly)
 
   ui <- fluidPage(
       # mod_incidence_time_ui("inc1")

@@ -74,39 +74,53 @@ plot_inc_time <- function(historical = T,
 
 
 #' Plot incidence timeseries using plotly
-#' @param historical whether to plot historical data, default = T
-#' @param current.month first day of current month, used to draw prediction line
 #' @param communeSelect name of commune selected in UI
 #' @param fktSelect name of fokontany selected in UI
+#' @param indicator which indicator to plot. options = "incidence", "cases"
 #' @import plotly lubridate stringr
 #' @importFrom scales alpha
 #' @importFrom tidyr pivot_wider
 #' @noRd
-plot_inc_time_plotly <- function(communeSelect = "District",
-                          fktSelect = "Selectionner"){
+timeseries_plotly <- function(communeSelect = "District",
+                          fktSelect = "Selectionner",
+                          indicator = "incidence"){
   #to debug
-  # historical <- T
+  # indicator = "incidence"
   # current.month = as.Date("2020-12-01")
   # communeSelect = "District"
 
   #create plot title and dataset subset
   if(communeSelect == "District"){
-    p.title <- 'Ifanadiana District Incidence'
+    p.title <- 'Ifanadiana District'
     #load data
     plot_data <- readRDS("data/for-app/inc-district.rds")
+
   } else if(fktSelect == "Selectionner"){
-    p.title <- paste(stringr::str_to_title(communeSelect),"Commune Incidence")
+    p.title <- paste(stringr::str_to_title(communeSelect),"Commune")
     #load data
     plot_data <- readRDS("data/for-app/inc-commune.rds") %>%
       filter(commune %in% toupper(communeSelect))
   } else {
     p.title <- paste0(stringr::str_to_title(communeSelect), ": ",
-                      stringr::str_to_title(fktSelect)," Incidence")
+                      stringr::str_to_title(fktSelect))
     plot_data <- readRDS("data/for-app/inc-fokontany.rds") %>%
       filter(comm_fkt %in% toupper(paste(communeSelect, fktSelect, sep = "_")))
   }
 
-  #limit data to historical & create aesthetics if necessary
+  #select columns for each indicator
+  #choose columns to plot depending on indicator
+  if(indicator == "incidence"){
+    ind_cols <- c("y_med" = "inc_med", "y_lowCI" = "inc_lowCI", "y_uppCI" = "inc_uppCI")
+    y_lab <- "Incidence (per 1000)"
+    p.title <- paste(p.title, "Incidence")
+  } else if (indicator == "cases"){
+    ind_cols <- c("y_med" = "case_med", "y_lowCI" = "case_lowCI", "y_uppCI" = "case_uppCI")
+    y_lab <- "Cas Totals"
+    p.title <- paste(p.title, "Cas")
+  }
+  plot_data <- rename(plot_data, ind_cols)
+
+
   #always plot historical because it can be turned off in plotly
     color.scale <- c("#682D63", "#414288", "#5FB49C", "black")
     size <- c(1, 1, 1, 2)
@@ -127,11 +141,11 @@ plot_inc_time_plotly <- function(communeSelect = "District",
 
   #plotly prefers wide data [actually maybe this isn't true]
   plotly_data <- plot_data |>
-    select(incidence = inc_med, season, month_lab) |>
+    select(y_med, season, month_lab) |>
     #round for better labels
-    mutate(incidence = round(incidence,2)) |>
+    mutate(y_med = round(y_med,2)) |>
     mutate(season = gsub("/", "_", paste("Season", stringr::str_trim(season), sep = "_"))) |>
-    tidyr::pivot_wider(names_from = season, values_from = incidence)
+    tidyr::pivot_wider(names_from = season, values_from = y_med)
   plotly_cis <- plot_data |>
     filter(season == "Present")
 
@@ -146,14 +160,14 @@ plot_inc_time_plotly <- function(communeSelect = "District",
     add_trace(x = ~month_lab, y = ~Season_Present, type = 'scatter', mode = 'lines',
               name = "2020/2021", line = list(color = color.scale[4], width = 4)) |>
     #add error range
-    add_ribbons(data = plotly_cis, x = ~month_lab, ymin = ~inc_lowCI, ymax = ~inc_uppCI,
+    add_ribbons(data = plotly_cis, x = ~month_lab, ymin = ~y_lowCI, ymax = ~y_uppCI,
                 fillcolor = scales::alpha(color.scale[4],0.2), hoverinfo = 'none',
                 line = list(color = scales::alpha(color.scale[4],0.2)),
                 name = 'Evéntail') |>
     #add vertical line for prediction area
     layout(shapes = list(vline(x = 8))) |>
     layout(hovermode = "x unified",
-           yaxis = list(title = "Incidence (per 1000)"),
+           yaxis = list(title = y_lab),
            xaxis = list(title = "Mois d'Année"),
            title = p.title) |>
     #remove buttons on top
@@ -164,4 +178,3 @@ plot_inc_time_plotly <- function(communeSelect = "District",
 
   # cat(file=stderr(), "ran plotly function")
 }
-

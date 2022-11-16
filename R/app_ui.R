@@ -78,12 +78,8 @@ app_ui <- function(request) {
                         width = 12)),
               #contains the plot of incidence time series
               fluidRow(
-                column(8,
-                  mod_incidence_time_plotly_ui("inc1")),
-                column(4,
-                       box(status = "warning",
-                           title = "Tableau sur fokontany selecté")
-                       ))),#ends incidence tab
+                column(12,
+                  mod_incidence_time_plotly_ui("inc1")))),#ends incidence tab
 
             tabItem(tabName = "inc_map",
                     #intro and instruction
