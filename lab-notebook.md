@@ -1,6 +1,27 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+
+## 2022-11-16
+
+Met with PNLP to discuss dashboard. Generally, they were super into it. Their main want is how to scale it up to other districts, although that is mostly limited by the data.
+
+Andres also had a good idea of structuring the site by level of the health system (fokontany, CSB/commune, district) rather by indicator, because this is more likely how people will use it. I think I agree, just deciding if I want to jump into that now like if I have time to do this before I present to Pivot. But honestly, yeah I think I do.
+
+## 2022-11-14
+
+Presented to the Teledetection team. Some feedback to take into account:
+
+- recommend having the landing page be a map or something interactive so it is more engaging from the beginning
+- add a table of data to the side of the map for people to interpret
+- discussed how to automate it
+
+
+**Model to do:**
+- run true prediction models (i.e. only using data from 2-3 months prior) for dashboard
+- run models on each age group individually for dashboard and combine
+- may be worth looking into rainfall predictions from www.wmolc.org. they give probabilities of below/above normal for three months into the future for precipitation and temperature. very broad but could help for scenarios. [this is maybe a thing for future me like in a year for scenario planning]
+
 ## 2022-11-11
 
 I did all the things! Set up a landing page and added information to each page in the form of markdown documents. 
