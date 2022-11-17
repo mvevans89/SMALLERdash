@@ -139,18 +139,49 @@ mal_map_popup <- mal.preds %>%
   #create pop-up (should also be done before the fact)
   mutate(popup = paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
                         "<b>Mois:</b> ", date, "<br>",
-                        "<b>Taux Prédit (per 1000):</b> ", round(median), "<br>",
+                        "<b>Taux Incidence Prédit (per 1000):</b> ", round(median), "<br>",
                         "<b>Éventail:</b> ", round(lowCI), " - ", round(uppCI))) %>%
   #fix NA popups
   mutate(popup = ifelse(is.na(popup),
                         paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
                                "<b>Mois:</b> ", date, "<br>",
-                               "<b>Taux Prédit (per 1000):</b> Inconnu <br>",
+                               "<b>Taux Incidence Prédit (per 1000):</b> Inconnu <br>",
                                "<b>Éventail:</b> Inconnu"), popup)) %>%
   right_join(fkt.poly) %>% st_as_sf()
 
 #save
 saveRDS(mal_map_popup, "data/for-app/inc_map_popup.rds")
+
+## Create malaria case predictions with popups for maps ############
+
+fkt.inc <- readRDS("data/for-app/inc-fokontany.rds")
+fkt.poly <-  readRDS("data/ifd_fokontany_poly.rds") %>%
+  st_transform(4326)
+
+# we want a value for each month x fokontany (even if NA)
+full.grid <- expand.grid(comm_fkt = unique(fkt.poly$comm_fkt),
+                         date = unique(fkt.inc$date))
+
+#expand and create popups
+case.map.popup <- fkt.inc %>%
+  right_join(full.grid,by = c("comm_fkt", "date")) %>%
+  tidyr::separate(comm_fkt, into = c("commune", "fokontany"), remove = F, sep = "_") %>%
+  #create pop-up (should also be done before the fact)
+  mutate(popup = paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                        "<b>Mois:</b> ", date, "<br>",
+                        "<b>Nombre Cas Prédit:</b> ", round(case_med), "<br>",
+                        "<b>Éventail:</b> ", round(case_lowCI), " - ", round(case_uppCI))) %>%
+  #fix NA popups
+  mutate(popup = ifelse(is.na(popup),
+                        paste0("<b>Fokontany:</b> ", stringr::str_to_title(fokontany), "<br>",
+                               "<b>Mois:</b> ", date, "<br>",
+                               "<b>Nombre Cas Prédit:</b> Inconnu <br>",
+                               "<b>Éventail:</b> Inconnu"), popup)) %>%
+  right_join(fkt.poly) %>% st_as_sf()
+
+#save
+saveRDS(case.map.popup, "data/for-app/case_map_popup.rds")
+
 
 ## Create centroids for automatic zoom ##################
 

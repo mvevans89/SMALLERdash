@@ -40,7 +40,7 @@ app_ui <- function(request) {
                        menuSubItem("L'application", tabName = "home"),
                        menuSubItem("Le modèle", tabName = "model_info")),
               # menuItem("Incidence", tabName = "incidence")
-              menuItem("Incidence", tabName = "inc_head",
+              menuItem("Incidence et Cas", tabName = "inc_head",
                        menuSubItem("Séries Temporels", tabName = "inc_time"),
                        menuSubItem("Cartographie", tabName = "inc_map")),
               menuItem("Cas au CSB", tabname = "case_head",
@@ -73,7 +73,7 @@ app_ui <- function(request) {
             tabItem(tabName = 'inc_time',
                     #intro and intructions
                     fluidRow(box(status = "info",
-                                 title = "Séries Temporels d'Incidence Mensuelle du Paludisme",
+                                 title = "Séries Temporels d'Indicateurs Mensuelle du Paludisme",
                         includeMarkdown("inst/app/www/inc-time.md"),
                         width = 12)),
               #contains the plot of incidence time series

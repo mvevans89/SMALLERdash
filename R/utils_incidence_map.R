@@ -2,12 +2,15 @@
 #'
 #' @description Function to create a leaflet plot of incidence
 #' @param map_data incidence data we want to map
+#' @param indicator which indicator to plot (cases, incidence)
+#' @importFrom dplyr rename
+#' @import leaflet sf
 #'
 #' @return The return value, if any, from executing the utility.
 #'
 #' @noRd
 
-plot_inc_map <- function(map_data){
+plot_inc_map <- function(map_data, indicator = "incidence"){
   #packages
   # require(sf)
   # require(ggplot2)
@@ -15,12 +18,20 @@ plot_inc_map <- function(map_data){
   # library(leaflet)
   # source("R/leaflet-legend-decreasing.R")
 
-  # #in function for now just to make sure it works, but will do in server-mod or even beforehand and save
-  # map_data <- readRDS("data/for-app/inc_map_popup.rds") %>%
+  #to debug
+  # map_data <- readRDS("data/for-app/case_map_popup.rds") %>%
   #   filter(date == as.Date("2020-12-01")) %>%
-  #   mutate(highlight = ifelse(comm_fkt == "IFANADIANA_IFANADIANA", "darkred","#4d4d4d")) %>%
-  #   mutate(highlight_wt = ifelse(comm_fkt == "IFANADIANA_IFANADIANA", 3,1))
+  #   mutate(highlight = factor("normal")) %>%
+  #   mutate(highlight_wt = 2)
+  # indicator = "cases"
 
+  #legend title if indicator is incidence
+  legend.title <- "Taux Paludisme<br>Prédit<br>(per 1000)"
+  #rename based on indicator
+  if(indicator == "cases"){
+    map_data <- dplyr::rename(map_data, median = case_med)
+    legend.title <- "Nombre de<br>Cas Totals"
+  }
 
   colorpal <- colorNumeric(
     palette = "YlOrRd",
@@ -50,6 +61,6 @@ plot_inc_map <- function(map_data){
                                                     weight = 3),
                 popup = ~popup) %>%
     addLegend_decreasing("bottomright", pal = colorpal, values = ~median,
-                         title = "Taux Paludisme<br>Prédit<br>(per 1000)", na.label = "", decreasing = TRUE)
+                         title = legend.title, na.label = "", decreasing = TRUE)
 
 }

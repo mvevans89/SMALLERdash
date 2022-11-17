@@ -2,11 +2,30 @@
 ## MV Evans
 
 
+## 2022-11-17
+
+Got the table to work on the map of the incidence/case by fokontany. Also figured out why the time series was being annoyingly automatic.
+
+I think I would like to add a table to the CSB map, maybe even color it by cases?
+
+**TO DO**
+
+- true prediction models that only use data from 2-3 months ahead of time [after Pivot presentation]
+- models for each age group [after Pivot presentation]
+
 ## 2022-11-16
 
 Met with PNLP to discuss dashboard. Generally, they were super into it. Their main want is how to scale it up to other districts, although that is mostly limited by the data.
 
-Andres also had a good idea of structuring the site by level of the health system (fokontany, CSB/commune, district) rather by indicator, because this is more likely how people will use it. I think I agree, just deciding if I want to jump into that now like if I have time to do this before I present to Pivot. But honestly, yeah I think I do.
+Andres also had a good idea of structuring the site by level of the health system (fokontany, CSB/commune, district) rather by indicator, because this is more likely how people will use it. I think I agree, just deciding if I want to jump into that now like if I have time to do this before I present to Pivot. But honestly, yeah I think I do. Will just have to note where I am right now in case I mess it up.
+
+Okay, I think the easiest is to just make brand-new modules, which hopefully won't take too long. Maybe I will see how long it takes to make one and then decide. Wait, okay for now instead of restructuring the whole thing. I will just change a button to where you can choose to plot cases or incidence of a fokontany/commune/etc. This isn't cases going to the CSB, but just rescaling the incidence by population of each spatial level. That's pretty easy to do.
+
+First, I had to create the dataset of cases at these levels. I did this in the `save-data-to-repo.R` script. I then updated the module for the website. I feel like I have it working, but I wanted to make it only go when you click the "Allez" button, but am having some issues with it being overly reactive and changing each time. Gave up on having the button because I couldn't get it to work. [update. it is because I was feeding a reactive variable directly to a render function, if you define tha argument outside the function, this odesn't happen].
+
+**TO DO**
+- add table that goes next to map when a fokontany is selected (should I drop the click popup then?)
+- add button to download data?
 
 ## 2022-11-14
 
