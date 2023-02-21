@@ -27,6 +27,9 @@ app_server <- function(input, output, session) {
   #community health server
   mod_sante_comm_server("comm1")
   mod_fktselect_server("comm1")
+
+  #commune level server
+  mod_sante_commune_server("commune")
 }
 
 

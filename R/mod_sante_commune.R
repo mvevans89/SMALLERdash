@@ -14,7 +14,7 @@ mod_sante_commune_ui <- function(id){
 
   fluidRow(
     #inputs
-    column(3,
+    column(4,
            #select commune
            selectInput(ns("commune"), label = "Choisir un commune:",
                        choices = c("Selectionner", "Ambiabe", "Ambohimanga du Sud", "Ambohimiera",
@@ -24,12 +24,12 @@ mod_sante_commune_ui <- function(id){
                                    "Tsaratanana"),
                        selected = "Selectionner")
            ),
-    column(2,
+    column(4,
            selectInput(ns("indicator"), "Choisir un  indicateur:",
                        choices = c("Cas" = "case", "Incidence" = "inc"), selected = "incidence")
     ),
     #button to load
-    column(1,
+    column(2,
            actionButton(ns("go_map"), "Allez!")
     ),
 

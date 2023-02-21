@@ -47,9 +47,10 @@ app_ui <- function(request) {
                        menuSubItem("Séries Temporels", tabName = "case_time"),
                        menuSubItem("Cartographie", tabName = "case_map")),
               menuItem("Santé Communautaire", tabname = "santeComm_head",
-                       menuSubItem("Séries Temporels", tabName = "comm_time")),
-              menuItem("Ruptures du Stock", tabName = "stock_head",
-                       menuSubItem("CSB2", tabName = "stock_csb2"))
+                       menuSubItem("Taux aux Fokontany", tabName = "comm_time")),
+              menuItem("Santé Primaire", tabName = "santePrim_head",
+                       menuSubItem("Taux aux Communes", tabName = "commune_time"),
+                       menuSubItem("Ruptures du Stock", tabName = "stock_csb2"))
               ) # end sidebarMenu
                          ), #end dashboardSidebar
 
@@ -119,6 +120,13 @@ app_ui <- function(request) {
                                  width = 12)),
                     #sante communautaire UI
                     mod_sante_comm_ui("comm1")),
+            ## commune time series tab -----------
+            tabItem(tabName = "commune_time",
+                    fluidRow(box(status = "info",
+                                 title = "Séries Temporels au Niveau Commune",
+                                 width = 12)),
+                    mod_sante_commune_ui("commune")),
+
             ## stockout tab ------------------
             tabItem(tabName = "stock_csb2",
                     #intro and instruction

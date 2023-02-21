@@ -5,7 +5,16 @@
 
 Got the community level thing up and running and refactored the plotly plot into a seperate function to hopefully make things easier to update all at once.
 
-Now working on making the same thing for CSB level. I think I will put stockouts under this structure too.
+Now working on making the same thing for CSB level. I think I will put stockouts under this structure too. Got it working!!
+
+**TO DO**
+
+- make data downloadable
+- maybe upload to better table format
+- create landing page with map in the background
+- move current home page to an about page
+
+
 
 ## 2023-02-20
 
