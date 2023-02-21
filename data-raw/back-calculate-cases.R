@@ -3,7 +3,7 @@
 
 #' This script back-calculates cases from the incidence data
 #' using the HCUI. Details exploring the method and how well it works
-#' are in `vignettes/timeseries-apps/backcalculate-incience-cases.qmd`.
+#' are in `vignettes/timeseries-apps/backcalculate-incidence-cases.qmd`.
 #'
 #'
 

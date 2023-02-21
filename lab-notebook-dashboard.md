@@ -1,6 +1,28 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2023-02-21
+
+Got the community level thing up and running and refactored the plotly plot into a seperate function to hopefully make things easier to update all at once.
+
+Now working on making the same thing for CSB level. I think I will put stockouts under this structure too.
+
+## 2023-02-20
+
+For the landing page, I think I want some kind of overall map of the district, then a floating chart thing that shows overall incidence, % comared to last year, and prediction over next 3 months go up, stay same, go down.
+
+I think I will just make new modules for this in case I break something from before. Okay, I made a  module for the community-level that shows a time series and data table for the fokontany. I may want to highlight the rows that are predictions, or maybe plot in descending order? Also, it would be nice to have some kind of title break between the plot and table but I can't super figure out how. Then I can just make the new community one from this template.
+
+## 2023-02-01
+
+Following getting some feedback from folks in Ranomafana, it is time to make some updates to the app. Here is a list of some to do (don't necessarily need all, some are just ideas):
+
+- make landing page a map (like maybe predicted incidence over next 3 months), then could have htat floating chart that plots those values with historical ones if you click on a fokontany. Only thing is many people don't actually know where the fokontany are, so maybe a datatable and chart would be better?
+- change the structure to be community vs CSB, then have incidence or cases within that
+- make data downloadable
+- make figures downloadable (ideally in a microsoft powerpoint editable format)
+- need to set up automated workflow once the espace dev folks are done and new Pivot server has been bought. Probably moving over to gitlab too.
+- some other important notes are in my notebook in Montpellier
 
 ## 2022-11-17
 

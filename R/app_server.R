@@ -23,6 +23,10 @@ app_server <- function(input, output, session) {
 
   #stockout barchart module
   mod_stock_act_server("act1")
+
+  #community health server
+  mod_sante_comm_server("comm1")
+  mod_fktselect_server("comm1")
 }
 
 

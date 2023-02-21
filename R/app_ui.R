@@ -46,6 +46,8 @@ app_ui <- function(request) {
               menuItem("Cas au CSB", tabname = "case_head",
                        menuSubItem("Séries Temporels", tabName = "case_time"),
                        menuSubItem("Cartographie", tabName = "case_map")),
+              menuItem("Santé Communautaire", tabname = "santeComm_head",
+                       menuSubItem("Séries Temporels", tabName = "comm_time")),
               menuItem("Ruptures du Stock", tabName = "stock_head",
                        menuSubItem("CSB2", tabName = "stock_csb2"))
               ) # end sidebarMenu
@@ -79,7 +81,7 @@ app_ui <- function(request) {
               #contains the plot of incidence time series
               fluidRow(
                 column(12,
-                  mod_incidence_time_plotly_ui("inc1")))),#ends incidence tab
+                  mod_incidence_time_plotly_ui("inc1")))), #ends incidence tab
 
             tabItem(tabName = "inc_map",
                     #intro and instruction
@@ -108,6 +110,15 @@ app_ui <- function(request) {
                                  width = 12)),
                     #selectin and map of cases
                     mod_cases_map_ui("map_case1")),
+
+            ## community health tab -------------
+            tabItem(tabName = "comm_time",
+                    #intro and instructions
+                    fluidRow(box(status = "info",
+                                 title = "Séries Temporels au Niveau Communautaire",
+                                 width = 12)),
+                    #sante communautaire UI
+                    mod_sante_comm_ui("comm1")),
             ## stockout tab ------------------
             tabItem(tabName = "stock_csb2",
                     #intro and instruction
@@ -117,7 +128,6 @@ app_ui <- function(request) {
                                  width = 12)),
                     #bar chart of ACTs
                     mod_stock_act_ui("act1"))
-
           )
         ) #end dashboardBody
 
