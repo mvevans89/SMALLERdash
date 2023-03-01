@@ -34,23 +34,25 @@ app_ui <- function(request) {
                                 class = "dropdown")),
 
         # SIDEBAR -------------------------------------
-        sidebar = dashboardSidebar(width = 200,
+        sidebar = dashboardSidebar(width = 250,
             sidebarMenu(
-              menuItem("Home", icon = icon("home"),
-                       menuSubItem("L'application", tabName = "home"),
-                       menuSubItem("Le modèle", tabName = "model_info")),
-              # menuItem("Incidence", tabName = "incidence")
-              menuItem("Incidence et Cas", tabName = "inc_head",
-                       menuSubItem("Séries Temporels", tabName = "inc_time"),
-                       menuSubItem("Cartographie", tabName = "inc_map")),
-              menuItem("Cas au CSB", tabname = "case_head",
-                       menuSubItem("Séries Temporels", tabName = "case_time"),
-                       menuSubItem("Cartographie", tabName = "case_map")),
-              menuItem("Santé Communautaire", tabname = "santeComm_head",
+              # menuItem("Incidence", tabName = "incidence"),
+              # menuItem("Incidence et Cas", tabName = "inc_head",
+              #          menuSubItem("Séries Temporels", tabName = "inc_time"),
+              #          menuSubItem("Cartographie", tabName = "inc_map")),
+              # menuItem("Cas au CSB", tabname = "case_head",
+              #          menuSubItem("Séries Temporels", tabName = "case_time"),
+              #          menuSubItem("Cartographie", tabName = "case_map")),
+              menuItem("Palu en Bref", icon = icon("gauge", lib = 'font-awesome'),
+                       tabName = "flash_dash"),
+              menuItem("Santé\nCommunautaire", icon = icon('people-roof', lib = "font-awesome"),
                        menuSubItem("Taux aux Fokontany", tabName = "comm_time")),
-              menuItem("Santé Primaire", tabName = "santePrim_head",
+              menuItem("Santé Primaire", icon = icon("hospital", lib = "font-awesome"),
                        menuSubItem("Taux aux Communes", tabName = "commune_time"),
-                       menuSubItem("Ruptures du Stock", tabName = "stock_csb2"))
+                       menuSubItem("Ruptures du Stock", tabName = "stock_csb2")),
+              menuItem("À propos", icon = icon("circle-info", lib = "font-awesome"),
+                       menuSubItem("L'application", tabName = "about"),
+                       menuSubItem("Le modèle", tabName = "model_info"))
               ) # end sidebarMenu
                          ), #end dashboardSidebar
 
@@ -66,51 +68,72 @@ app_ui <- function(request) {
           ))),
 
           tabItems(
-            ## home landing page ------------------
-            tabItem(tabName = 'home',
-                includeMarkdown("inst/app/www/home.md")
-                    ),
-            tabItem(tabName = "model_info",
-                    includeMarkdown("inst/app/www/model-info.md")),
+            ## landing page with highlights ---------
+                tabItem(tabName = "flash_dash",
+                        fluidRow(
+                          titlePanel("Projections pour Janvier 2022"),
+                          #these will eventually need to update automatically every month
+                          valueBox(value = 8000,
+                                   subtitle = "cas pour 100k",
+                                   color = "purple",
+                                   icon = icon("person-rays", lib = "font-awesome"),
+                                   width = 3),
+                          valueBox(value = 15000,
+                                   subtitle = "cas totals prédit",
+                                   color = "aqua",
+                                   icon = icon("person-burst", lib = "font-awesome"),
+                                   width = 3),
+                          valueBox(value = "+140%",
+                                   subtitle = "comparé à l'année passée",
+                                   color = "red",
+                                   icon = icon("chart-line", lib = "font-awesome"),
+                                   width = 3),
+                          valueBox(value = "4 CSB",
+                                   subtitle = "au risque du rupture du stock",
+                                   color = "green",
+                                   icon = icon("pills", lib = "font-awesome"),
+                                   width = 3)
+                        )
+                        ), #end landing page tab
             ## incidence tab ------------------
-            tabItem(tabName = 'inc_time',
-                    #intro and intructions
-                    fluidRow(box(status = "info",
-                                 title = "Séries Temporels d'Indicateurs Mensuelle du Paludisme",
-                        includeMarkdown("inst/app/www/inc-time.md"),
-                        width = 12)),
-              #contains the plot of incidence time series
-              fluidRow(
-                column(12,
-                  mod_incidence_time_plotly_ui("inc1")))), #ends incidence tab
-
-            tabItem(tabName = "inc_map",
-                    #intro and instruction
-                    fluidRow(box(status = "info",
-                                 title = "Cartes d'Incidence Mensuelle du Paludisme",
-                                 includeMarkdown("inst/app/www/inc-map.md"),
-                                 width = 12)),
-                    #map of incidence
-                    mod_incidence_map_ui("map_inc1")
-                    ),
+            # tabItem(tabName = 'inc_time',
+            #         #intro and intructions
+            #         fluidRow(box(status = "info",
+            #                      title = "Séries Temporels d'Indicateurs Mensuelle du Paludisme",
+            #             includeMarkdown("inst/app/www/inc-time.md"),
+            #             width = 12)),
+            #   #contains the plot of incidence time series
+            #   fluidRow(
+            #     column(12,
+            #       mod_incidence_time_plotly_ui("inc1")))), #ends incidence tab
+            #
+            # tabItem(tabName = "inc_map",
+            #         #intro and instruction
+            #         fluidRow(box(status = "info",
+            #                      title = "Cartes d'Incidence Mensuelle du Paludisme",
+            #                      includeMarkdown("inst/app/www/inc-map.md"),
+            #                      width = 12)),
+            #         #map of incidence
+            #         mod_incidence_map_ui("map_inc1")
+            #         ),
             ## cases tab --------------
-            tabItem(tabName = "case_time",
-                    #intro and instruction
-                    fluidRow(box(status = "info",
-                                 title = "Séries Temporels des Cas de Paludisme Prise en Charge aux CSBs",
-                                 includeMarkdown("inst/app/www/case-time.md"),
-                                 width = 12)),
-                    #time series of cases
-                    mod_cases_time_plotly_ui("case1")),
-
-            tabItem(tabName =  "case_map",
-                    #intro and instruction
-                    fluidRow(box(status = "info",
-                                 title = "Cartes des Cas de Paludisme Prise en Charge aux CSBs",
-                                 includeMarkdown("inst/app/www/case-map-intro.md"),
-                                 width = 12)),
-                    #selectin and map of cases
-                    mod_cases_map_ui("map_case1")),
+            # tabItem(tabName = "case_time",
+            #         #intro and instruction
+            #         fluidRow(box(status = "info",
+            #                      title = "Séries Temporels des Cas de Paludisme Prise en Charge aux CSBs",
+            #                      includeMarkdown("inst/app/www/case-time.md"),
+            #                      width = 12)),
+            #         #time series of cases
+            #         mod_cases_time_plotly_ui("case1")),
+            #
+            # tabItem(tabName =  "case_map",
+            #         #intro and instruction
+            #         fluidRow(box(status = "info",
+            #                      title = "Cartes des Cas de Paludisme Prise en Charge aux CSBs",
+            #                      includeMarkdown("inst/app/www/case-map-intro.md"),
+            #                      width = 12)),
+            #         #selectin and map of cases
+            #         mod_cases_map_ui("map_case1")),
 
             ## community health tab -------------
             tabItem(tabName = "comm_time",
@@ -135,7 +158,13 @@ app_ui <- function(request) {
                                  includeMarkdown("inst/app/www/stock-act-csb2.md"),
                                  width = 12)),
                     #bar chart of ACTs
-                    mod_stock_act_ui("act1"))
+                    mod_stock_act_ui("act1")),
+            ## about the model page ------------------
+            tabItem(tabName = 'about',
+                    includeMarkdown("inst/app/www/home.md")
+            ),
+            tabItem(tabName = "model_info",
+                    includeMarkdown("inst/app/www/model-info.md"))
           )
         ) #end dashboardBody
 
