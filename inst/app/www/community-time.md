@@ -1,0 +1,5 @@
+Le figure sur cette page affiche le taux d'incidence ou le nombre de ca mensuelle du paludisme symptomatique au niveau du fokontany pour tous les âges. Il inclut l'incidence historique des trois dernières années pour qu'on puisse comparer avec l'incidence prévue. L'incidence prévue à un éventail gris pour le période de prédiction. L'éventail représent un interval de confidence de 95%. La période de prédiction (Jan - Mars 2021) se situe après la ligne pointillée. Vous pouvez télécharger cette figure en cliquant sur l'icône de l'appareil photo en haut à droite.
+
+Le tableau en bas affiche le taux d'incidence mensuelle pour le fokontany choisi depuis 2016. Pour les mois historiques, les estimations minimales et maximales sont ègaux aux estimations moyennes.
+
+Commencez en choissisant une commune et fokontany et appuyez sur le boutton "Allez!".

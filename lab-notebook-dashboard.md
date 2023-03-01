@@ -1,6 +1,16 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2023-03-01
+
+Working on making a nicer landing page. This will have little alert buttons + a map. I finished the buttons and cleaned up the rest of the app, but still need to make the map itself. It would be cool if when you clikced there was a little popup that showed the time series of something for that fokontany too. but that can come later.
+
+**TO DO:**
+
+- map on landing page
+- download button for table data
+
+
 ## 2023-02-21
 
 Got the community level thing up and running and refactored the plotly plot into a seperate function to hopefully make things easier to update all at once.
@@ -13,7 +23,6 @@ Now working on making the same thing for CSB level. I think I will put stockouts
 - maybe upload to better table format
 - create landing page with map in the background
 - move current home page to an about page
-
 
 
 ## 2023-02-20
