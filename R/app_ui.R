@@ -64,7 +64,7 @@ app_ui <- function(request) {
             ## landing page with highlights ---------
                 tabItem(tabName = "flash_dash",
                         fluidRow(
-                          titlePanel("  Projections pour Janvier 2022"),
+                          titlePanel("  Projections pour Janvier 2021"),
                           #these will eventually need to update automatically every month
                           valueBox(value = 8000,
                                    subtitle = "cas pour 100k",
@@ -87,7 +87,7 @@ app_ui <- function(request) {
                                    icon = icon("pills", lib = "font-awesome"),
                                    width = 3)
                         ),
-                        "map goes here",
+                        mod_landing_map_ui("land_map")
                         ), #end landing page tab
             ## community health tab -------------
             tabItem(tabName = "comm_time",
@@ -104,7 +104,7 @@ app_ui <- function(request) {
                                  title = "Séries Temporels au Niveau Commune",
                                  includeMarkdown("inst/app/www/commune-time.md"),
                                  width = 12)),
-                    mod_sante_commune_ui("commune")),
+                    mod_sante_primaire_ui("commune")),
 
             ## stockout tab ------------------
             tabItem(tabName = "stock_csb2",

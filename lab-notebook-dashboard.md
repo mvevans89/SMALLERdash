@@ -1,6 +1,15 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2023-03-03
+
+Adding a map to the landing page and download buttons to the table data. What we really need to work on it making the automated workflow.
+
+**TO DO**:
+
+- follow up with Mariot and Rajema while in Ranomafana to get this working
+- follow up with Espace Dev
+
 ## 2023-03-01
 
 Working on making a nicer landing page. This will have little alert buttons + a map. I finished the buttons and cleaned up the rest of the app, but still need to make the map itself. It would be cool if when you clikced there was a little popup that showed the time series of something for that fokontany too. but that can come later.
