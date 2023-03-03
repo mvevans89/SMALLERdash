@@ -57,3 +57,18 @@ timeseries_comm <- function(communeSelect,
   # cat(file=stderr(), "ran plotly function")
 }
 
+#other helper functions
+#utility functions
+#data table
+create_dt <- function(table_df){
+  DT::datatable(table_df,
+                options = list(paging = TRUE, searching = TRUE),
+                rownames = F) |>
+    formatStyle(columns = colnames(table_df), fontSize = '75%') |>
+    formatRound(columns = c("Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale"), digits = 0)
+}
+
+write_file <- function(file_path, data)
+{
+  data.table::fwrite(x = data, file = file_path)
+}

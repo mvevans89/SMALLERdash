@@ -41,6 +41,7 @@ mod_sante_primaire_ui <- function(id){
     column(12,
            dataTableOutput(ns("dt_table"))
     ),
+    column(5,), #this helps center download button
     column(3,
            shiny::downloadButton(
              outputId = ns("download_button"),
@@ -48,20 +49,6 @@ mod_sante_primaire_ui <- function(id){
            )
     )
   )
-}
-
-#function to save CSVs
-write_file <- function(file_path, data)
-{
-  data.table::fwrite(x = data, file = file_path)
-}
-#data table format function
-create_dt <- function(table_df){
-  DT::datatable(table_df,
-                options = list(paging = TRUE, searching = TRUE),
-                rownames = F) |>
-    formatStyle(columns = colnames(table_df), fontSize = '75%') |>
-    formatRound(columns = c("Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale"), digits = 0)
 }
 
 
@@ -79,7 +66,7 @@ mod_sante_primaire_server <- function(id){
       filter(commune %in% toupper("Ranomafana")) |>
       select(commune, date, starts_with("inc")) |>
       select(-ends_with("true")) |>
-      mutate_at(vars(starts_with(this_indicator)), ~floor(.))
+      mutate_at(vars(starts_with("inc")), ~floor(.))
     colnames(table_data) <- c("Commune", "Date", "Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale")
     #output table
     output$dt_table <- DT::renderDataTable(create_dt(table_data))

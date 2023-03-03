@@ -18,15 +18,15 @@ mod_sante_comm_ui <- function(id){
     column(3,
            #commune selection
            selectInput(ns("commune"), label = "Choisir un commune:",
-                       choices = c("Selectionner","Ambiabe", "Ambohimanga du Sud", "Ambohimiera", "Ampasinambo",
+                       choices = c("Ambiabe", "Ambohimanga du Sud", "Ambohimiera", "Ampasinambo",
                                    "Analampasina", "Androrangavola", "Antaretra", "Antsindra",
                                    "Fasintsara", "Ifanadiana", "Kelilalina", "Maroharatra",
                                    "Marotoko", 'Ranomafana', "Tsaratanana"),
-                       selected = "Selectionner")),
+                       selected = "Ranomafana")),
     column(3,
            #fokontany selection (this gets updated based on commune)
            selectInput(ns("fokontany"), label = "Choisir un fokontany:",
-                       choices = c("Selectionner"), selected = "Selectionner")),
+                       choices = c("Ranomafana"), selected = "Ranomafana")),
     column(2,
            selectInput(ns("indicator"), "Choisir un  indicateur:",
                        choices = c("Cas" = "case", "Incidence" = "inc"), selected = "incidence")
@@ -42,14 +42,47 @@ mod_sante_comm_ui <- function(id){
     ),
     #fluid row for table of data
     column(12,
-           dataTableOutput(ns("dt_table")))
+           dataTableOutput(ns("dt_table"))
+           ),
+    column(5,),
+    column(3,
+           shiny::downloadButton(
+             outputId = ns("download_button"),
+             label = "Télécharger le tableau."
+           )
+    )
   )#fluid row
 }
+
 
 #function to add the plotly plot and datatable
 mod_sante_comm_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
+
+    #starting plot and table
+    output$plot <- renderPlotly(timeseries_comm(communeSelect = "Ranomafana",
+                                                fktSelect = "Ranomafana",
+                                                indicator = "case"))
+
+    table_data <- readRDS("data/for-app/inc-fokontany.rds") |>
+      tidyr::separate(comm_fkt, into = c("commune", "fokontany"), sep = "_") |>
+      filter(commune %in% toupper("Ranomafana") & fokontany %in% toupper("Ranomafana")) |>
+      select(commune, fokontany, date, starts_with("case")) %>%
+      #format to have it make more sense
+      select(-ends_with("true")) |>
+      mutate_at(vars(starts_with("case")), ~floor(.))
+    colnames(table_data) <- c("Commune", "Fokontany", "Date", "Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale")
+
+    #output table
+    output$dt_table <- DT::renderDataTable(create_dt(table_data))
+    output$download_button <- shiny::downloadHandler(
+      filename = paste0("Ranomafana-Ranomafana-inc.csv"),
+      content = function(file_path)
+      {
+        write_file(file_path = file_path, data = table_data)
+      }
+    )
 
     observeEvent(input$go_map,{
     #must save these outside the render call or it is reactive
@@ -60,26 +93,28 @@ mod_sante_comm_server <- function(id){
                                                   fktSelect = this_fokontany,
                                                   indicator = this_indicator))
 
-    #data table
-    create_dt <- function(table_df){
-      DT::datatable(table_df,
-                    options = list(paging = TRUE, searching = TRUE),
-                    rownames = F) |>
-        formatStyle(columns = colnames(table_df), fontSize = '75%') |>
-        formatRound(columns = c("Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale"), digits = 0)
-    }
+
 
     table_data <- readRDS("data/for-app/inc-fokontany.rds") |>
       tidyr::separate(comm_fkt, into = c("commune", "fokontany"), sep = "_") |>
       filter(commune %in% toupper(this_commune) & fokontany %in% toupper(this_fokontany)) |>
       select(commune, fokontany, date, starts_with(this_indicator)) %>%
       #format to have it make more sense
-      select(-ends_with("true"))
+      select(-ends_with("true")) |>
+      mutate_at(vars(starts_with(this_indicator)), ~floor(.))
     colnames(table_data) <- c("Commune", "Fokontany", "Date", "Estimation Minimale", 'Estimation Moyenne', "Estimation Maximale")
 
 
     #output table
     output$dt_table <- DT::renderDataTable(create_dt(table_data))
+    #data for download
+    output$download_button <- shiny::downloadHandler(
+      filename = paste0(this_commune, "-", this_fokontany, "-", this_indicator, ".csv"),
+      content = function(file_path)
+      {
+        write_file(file_path = file_path, data = table_data)
+      }
+    )
     }) #end observeEvent
 
   }) #end moduleServer
