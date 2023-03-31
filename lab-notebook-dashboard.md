@@ -1,6 +1,17 @@
 # SMALLERdash lab notebook
 ## MV Evans
 
+## 2023-03-28
+
+Espace Dev folks say that we will soon have the data for this. The other temporal data sources we use are temperature and rainfall. Rainfall is easy to update, temperature will be a bit of a pain because I was using MODIS before via GEE. I can always use my old temperature workflow using gapfill.
+
+**TO DO:**
+
+- write link to download predictions from geostat repo
+- update alert boxes automatically from data somehow
+- write code that will update predictions automatically as a function of "current date" (this will be in one place that we then call)
+- add the floating box bit to the map?
+
 ## 2023-03-03
 
 Adding a map to the landing page and download buttons to the table data. What we really need to work on it making the automated workflow.
